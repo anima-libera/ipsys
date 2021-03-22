@@ -1,0 +1,224 @@
+
+#version 450 core
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+/* PIL: Particle Interaction Law */
+#define PIL_STEP_DIST 0.006
+#define PIL_STEP_NUMBER 90
+struct pil_val_step_t
+{
+	float offset;
+	float slope;
+};
+struct pil_val_t
+{
+	pil_val_step_t steps[PIL_STEP_NUMBER];
+};
+struct pil_t
+{
+	pil_val_t attraction;
+	pil_val_t angle;
+	pil_val_t speed;
+};
+
+/* CTL: Change Type Law */
+#define CTL_NUMBER 8
+struct ctl_t
+{
+	uint used;
+	uint has_speed_min; float speed_min;
+	uint has_speed_max; float speed_max;
+	uint has_pressure_min; float pressure_min;
+	uint has_pressure_max; float pressure_max;
+	uint has_age_min; uint age_min;
+	uint has_age_max; uint age_max;
+	uint new_type; float probability;
+};
+
+/* Particle */
+struct part_type_t
+{
+	float br, bg, bb; /* color base */
+	float sr, sg, sb; /* color speed */
+	float pr, pg, pb; /* color pressure */
+	ctl_t ctl_array[CTL_NUMBER];
+};
+struct part_t
+{
+	float x, y; /* Can't be replaced by vec2 */
+	float speed;
+	float angle;
+	float pressure;
+	float r, g, b;
+	float oldx, oldy;
+	uint type;
+	uint age;
+};
+
+#define PARTICLE_NUMBER (256 * 6)
+#define PHYSICAL_RADIUS 0.006
+#define MARGIN (PHYSICAL_RADIUS * 0.75)
+
+#define TAU 6.28318530717
+
+layout(shared, binding = 0) buffer buffer_curr
+{
+	part_t curr[PARTICLE_NUMBER];
+};
+layout(shared, binding = 1) buffer buffer_next
+{
+	part_t next[PARTICLE_NUMBER];
+};
+layout(shared, binding = 2) buffer buffer_type
+{
+	part_type_t type_table[];
+};
+layout(shared, binding = 3) buffer buffer_pil_set
+{
+	pil_t pil_table[];
+};
+layout(shared, binding = 4) buffer buffer_info
+{
+	uint type_number;
+};
+
+void main()
+{
+	uint i = gl_GlobalInvocationID.x;
+	if (i >= PARTICLE_NUMBER) return;
+	
+	next[i] = curr[i];
+
+	next[i].age = curr[i].age + 1;
+
+	vec2 v = curr[i].speed * vec2(cos(curr[i].angle), sin(curr[i].angle));
+
+	next[i].pressure = 0.0;
+
+	for (uint j = 0; j < PARTICLE_NUMBER; ++j)
+	{
+		if (j == i) continue;
+
+		vec2 ij_vec = vec2(curr[i].x-curr[j].x, curr[i].y-curr[j].y);
+		float d = length(ij_vec);
+
+		if (d < 2.0 * PHYSICAL_RADIUS)
+		{
+			next[i].pressure += 2.0 * PHYSICAL_RADIUS - d;
+		}
+
+		if (d == 0)
+		{
+			d = 0.000001;
+			ij_vec = d * vec2(cos(float(i)), sin(float(i)));
+		}
+
+		uint step_index = uint(floor(d / PIL_STEP_DIST));
+		if (step_index < PIL_STEP_NUMBER)
+		{
+			uint ij = curr[i].type * type_number + curr[j].type;
+			pil_val_step_t s = pil_table[ij].attraction.steps[step_index];
+			float step_start = float(step_index) * PIL_STEP_DIST;
+			float f = s.offset + (d - step_start) * s.slope;
+
+			float angle = atan(ij_vec.y, ij_vec.x);
+			s = pil_table[ij].angle.steps[step_index];
+			angle += s.offset + (d - step_start) * s.slope;
+
+			v += f * vec2(cos(angle), sin(angle));
+
+			s = pil_table[ij].speed.steps[step_index];
+			float speedf = s.offset + (d - step_start) * s.slope;
+			if (speedf < 0.0)
+			{
+				v /= -speedf+1.0;
+			}
+			else if (speedf > 0.0)
+			{
+				v *= speedf+1.0;
+			}
+		}
+	}
+
+	#define FRICTION_F 0.985
+	v *= FRICTION_F;
+
+	next[i].x = curr[i].x + v.x;
+	next[i].y = curr[i].y + v.y;
+
+	#define BONK_F 1.0
+	if (next[i].x < -(1.0-MARGIN))
+	{
+		v.x = +abs(v.x);
+		next[i].x = -(1.0-MARGIN);
+		v.x *= BONK_F; v.y *= BONK_F;
+	}
+	else if (next[i].x > (1.0-MARGIN))
+	{
+		v.x = -abs(v.x);
+		next[i].x = (1.0-MARGIN);
+		v.x *= BONK_F; v.y *= BONK_F;
+	}
+	if (next[i].y < -(1.0-MARGIN))
+	{
+		v.y = +abs(v.y);
+		next[i].y = -(1.0-MARGIN);
+		v.x *= BONK_F; v.y *= BONK_F;
+	}
+	else if (next[i].y > (1.0-MARGIN))
+	{
+		v.y = -abs(v.y);
+		next[i].y = (1.0-MARGIN);
+		v.x *= BONK_F; v.y *= BONK_F;
+	}
+
+	float s = length(v);
+	next[i].speed = s;
+	if (s > 0)
+	{
+		next[i].angle = atan(v.y, v.x);
+	}
+
+	next[i].oldx = curr[i].x;
+	next[i].oldy = curr[i].y;
+
+	#define T type_table[next[i].type]
+	next[i].r = T.br + next[i].speed * T.sr + next[i].pressure * T.pr;
+	next[i].g = T.bg + next[i].speed * T.sg + next[i].pressure * T.pg;
+	next[i].b = T.bb + next[i].speed * T.sb + next[i].pressure * T.pb;
+	#undef T
+
+	#if 0
+	for (uint j = 0; j < CTL_NUMBER; ++j)
+	{
+		#define CTL type_table[i].ctl_array[j]
+		if (!(bool(CTL.used)))
+			continue;
+		if (bool(CTL.has_speed_min) && next[i].speed < CTL.speed_min)
+			continue;
+		if (bool(CTL.has_speed_max) && next[i].speed > CTL.speed_max)
+			continue;
+		if (bool(CTL.has_pressure_min) && next[i].pressure < CTL.pressure_min)
+			continue;
+		if (bool(CTL.has_pressure_max) && next[i].pressure > CTL.pressure_max)
+			continue;
+		if (bool(CTL.has_age_min) && next[i].age < CTL.age_min)
+			continue;
+		if (bool(CTL.has_age_max) && next[i].age > CTL.age_max)
+			continue;
+		if (rand(i) < CTL.probability)
+		{
+			next[i].type = CTL.new_type;
+			next[i].age = 0;
+			break;
+		}
+		#undef CTL
+	}
+
+	if (next[i].age > 100)
+	{
+		next[i].type = (curr[i].type + 1) % type_number;
+		next[i].age = 0;
+	}
+	#endif
+}
