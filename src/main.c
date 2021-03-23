@@ -45,81 +45,13 @@ void randomize_parts(
 	memcpy(part_array_b, part_array_a, part_number * sizeof(part_t));
 }
 
-int main(int argc, const char** argv)
+void randomize_pils(pil_set_t* pil_set_table, unsigned int type_number)
 {
-	(void)argc; (void)argv; /* Unused for now... */
-
-	if (init_g_graphics() != 0)
-	{
-		return -1;
-	}
-	enable_opengl_dbgmsg();
-
-	GLuint vao_id;
-	glGenVertexArrays(1, &vao_id);
-	glBindVertexArray(vao_id);
-
-	shprog_build_all();
-
-	g_rg = rg_create_timeseeded(0);
-
-	universe_info_t info = {0};
-	info.type_number = rg_uint(g_rg, 1, 6);
-	unsigned int tn = info.type_number;
-	unsigned int tnu = (rg_uint(g_rg, 0, 1) == 0) ?
-		2 : rg_uint(g_rg, 1, (tn > 3) ? 3 : tn);
-
-	GLuint buf_info_id;
-	glGenBuffers(1, &buf_info_id);
-	glBindBuffer(GL_ARRAY_BUFFER, buf_info_id);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(universe_info_t),
-		&info, GL_STATIC_DRAW);
-
-	part_type_t* type_table = xmalloc(tn * sizeof(part_type_t));
-	
-	randomize_colors(type_table, tn);
-
-	for (unsigned int i = 0; i < tn; ++i)
-	for (unsigned int j = 0; j < CHANGE_TYPE_LAW_NUMBER; ++j)
-	{
-		change_type_law_t* ctl = &type_table[i].change_type_law_array[j];
-		ctl->used = (tn > 1) * rg_uint(g_rg, 0, 1);
-		if (!ctl->used) continue;
-		ctl->has_speed_min = rg_uint(g_rg, 0, 1);
-		ctl->has_speed_max = rg_uint(g_rg, 0, 1);
-		ctl->has_pressure_min = rg_uint(g_rg, 0, 1);
-		ctl->has_pressure_max = rg_uint(g_rg, 0, 1);
-		ctl->has_age_min = rg_uint(g_rg, 0, 1);
-		ctl->has_age_max = 0;//rg_uint(g_rg, 0, 1);
-		ctl->speed_min = rg_float(g_rg, 0.0f, 0.02f);
-		ctl->speed_max = rg_float(g_rg, 0.0f, 0.02f);
-		ORDER(float, ctl->speed_min, ctl->speed_max);
-		ctl->pressure_min = rg_float(g_rg, 0.0f, 1.5f);
-		ctl->pressure_max = rg_float(g_rg, 0.0f, 1.5f);
-		ORDER(float, ctl->pressure_min, ctl->pressure_max);
-		ctl->age_min = rg_uint(g_rg, 0, 60*1);
-		ctl->age_max = rg_uint(g_rg, 0, 60*1);
-		ORDER(unsigned int, ctl->age_min, ctl->age_max);
-		do {
-			ctl->new_type = rg_uint(g_rg, 0, tn-1);
-		} while (ctl->new_type == i);
-		ctl->probability = rg_float(g_rg, 0.0f, 0.1f);
-	}
-
-	GLuint buf_type_id;
-	glGenBuffers(1, &buf_type_id);
-	glBindBuffer(GL_ARRAY_BUFFER, buf_type_id);
-	glBufferData(GL_ARRAY_BUFFER, tn * sizeof(part_type_t),
-		type_table, GL_STATIC_DRAW);
-
-	pil_set_t* pil_set_table =
-		xmalloc(tn*tn * sizeof(pil_set_t));
-
 	int continuous = 1;//rg_int(g_rg, 1, 5);
-	for (unsigned int i = 0; i < tn; ++i)
-	for (unsigned int j = 0; j < tn; ++j)
+	for (unsigned int i = 0; i < type_number; ++i)
+	for (unsigned int j = 0; j < type_number; ++j)
 	{
-		pil_set_t* pil_set = &pil_set_table[i * tn + j];
+		pil_set_t* pil_set = &pil_set_table[i * type_number + j];
 
 		/* attraction */
 		pil_set->attraction.steps[0].offset = rg_int(g_rg, 0, 8) == 0 ?
@@ -215,6 +147,78 @@ int main(int argc, const char** argv)
 			}
 		}
 	}
+}
+
+int main(int argc, const char** argv)
+{
+	(void)argc; (void)argv; /* Unused for now... */
+
+	if (init_g_graphics() != 0)
+	{
+		return -1;
+	}
+	enable_opengl_dbgmsg();
+
+	GLuint vao_id;
+	glGenVertexArrays(1, &vao_id);
+	glBindVertexArray(vao_id);
+
+	shprog_build_all();
+
+	g_rg = rg_create_timeseeded(0);
+
+	universe_info_t info = {0};
+	info.type_number = rg_uint(g_rg, 1, 6);
+	unsigned int tn = info.type_number;
+	unsigned int tnu = (rg_uint(g_rg, 0, 1) == 0) ?
+		2 : rg_uint(g_rg, 1, (tn > 3) ? 3 : tn);
+
+	GLuint buf_info_id;
+	glGenBuffers(1, &buf_info_id);
+	glBindBuffer(GL_ARRAY_BUFFER, buf_info_id);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(universe_info_t),
+		&info, GL_STATIC_DRAW);
+
+	part_type_t* type_table = xmalloc(tn * sizeof(part_type_t));
+	
+	randomize_colors(type_table, tn);
+
+	for (unsigned int i = 0; i < tn; ++i)
+	for (unsigned int j = 0; j < CHANGE_TYPE_LAW_NUMBER; ++j)
+	{
+		change_type_law_t* ctl = &type_table[i].change_type_law_array[j];
+		ctl->used = (tn > 1) * rg_uint(g_rg, 0, 1);
+		if (!ctl->used) continue;
+		ctl->has_speed_min = rg_uint(g_rg, 0, 1);
+		ctl->has_speed_max = rg_uint(g_rg, 0, 1);
+		ctl->has_pressure_min = rg_uint(g_rg, 0, 1);
+		ctl->has_pressure_max = rg_uint(g_rg, 0, 1);
+		ctl->has_age_min = rg_uint(g_rg, 0, 1);
+		ctl->has_age_max = 0;//rg_uint(g_rg, 0, 1);
+		ctl->speed_min = rg_float(g_rg, 0.0f, 0.02f);
+		ctl->speed_max = rg_float(g_rg, 0.0f, 0.02f);
+		ORDER(float, ctl->speed_min, ctl->speed_max);
+		ctl->pressure_min = rg_float(g_rg, 0.0f, 1.5f);
+		ctl->pressure_max = rg_float(g_rg, 0.0f, 1.5f);
+		ORDER(float, ctl->pressure_min, ctl->pressure_max);
+		ctl->age_min = rg_uint(g_rg, 0, 60*1);
+		ctl->age_max = rg_uint(g_rg, 0, 60*1);
+		ORDER(unsigned int, ctl->age_min, ctl->age_max);
+		do {
+			ctl->new_type = rg_uint(g_rg, 0, tn-1);
+		} while (ctl->new_type == i);
+		ctl->probability = rg_float(g_rg, 0.0f, 0.1f);
+	}
+
+	GLuint buf_type_id;
+	glGenBuffers(1, &buf_type_id);
+	glBindBuffer(GL_ARRAY_BUFFER, buf_type_id);
+	glBufferData(GL_ARRAY_BUFFER, tn * sizeof(part_type_t),
+		type_table, GL_STATIC_DRAW);
+
+	pil_set_t* pil_set_table = xmalloc(tn*tn * sizeof(pil_set_t));
+
+	randomize_pils(pil_set_table, tn);
 
 	GLuint buf_pil_set_id;
 	glGenBuffers(1, &buf_pil_set_id);
@@ -284,6 +288,14 @@ int main(int argc, const char** argv)
 							glBufferData(GL_ARRAY_BUFFER,
 								PARTICLE_NUMBER * sizeof(part_t),
 								part_array_b, GL_DYNAMIC_DRAW);
+						break;
+
+						case SDLK_r:
+							randomize_pils(pil_set_table, tn);
+							glBindBuffer(GL_ARRAY_BUFFER, buf_pil_set_id);
+							glBufferData(GL_ARRAY_BUFFER,
+								tn*tn * sizeof(pil_set_t),
+								pil_set_table, GL_STATIC_DRAW);
 						break;
 					}
 				break;
