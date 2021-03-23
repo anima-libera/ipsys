@@ -8,6 +8,7 @@
 #include "settings.h"
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
 
@@ -25,6 +26,23 @@ void randomize_colors(part_type_t* type_table, unsigned int type_number)
 		type_table[i].pg = rg_float(g_rg, -100.0f, 100.0f);
 		type_table[i].pb = rg_float(g_rg, -100.0f, 100.0f);
 	}
+}
+
+void randomize_parts(
+	part_t* part_array_a, part_t* part_array_b, 
+	unsigned int part_number, unsigned int type_number)
+{
+	for (unsigned int i = 0; i < part_number; ++i)
+	{
+		part_array_a[i].x = rg_float(g_rg, -1.0f, 1.0f);
+		part_array_a[i].y = rg_float(g_rg, -1.0f, 1.0f);
+		part_array_a[i].speed = 0.0f;
+		part_array_a[i].angle = rg_float(g_rg, 0.0f, TAU);
+		part_array_a[i].type = rg_uint(g_rg, 0, type_number-1);
+		part_array_a[i].age = 0;
+	}
+
+	memcpy(part_array_b, part_array_a, part_number * sizeof(part_t));
 }
 
 int main(int argc, const char** argv)
@@ -208,20 +226,7 @@ int main(int argc, const char** argv)
 	part_t part_array_a[PARTICLE_NUMBER] = {0};
 	part_t part_array_b[PARTICLE_NUMBER] = {0};
 
-	for (int i = 0; i < PARTICLE_NUMBER; ++i)
-	{
-		part_array_a[i].x = rg_float(g_rg, -1.0f, 1.0f);
-		part_array_a[i].y = rg_float(g_rg, -1.0f, 1.0f);
-		part_array_a[i].speed = 0.0f;
-		part_array_a[i].angle = rg_float(g_rg, 0.0f, TAU);
-		part_array_a[i].type = rg_uint(g_rg, 0, tnu-1);
-		part_array_a[i].age = 0;
-	}
-
-	for (int i = 0; i < PARTICLE_NUMBER; ++i)
-	{
-		part_array_b[i] = part_array_a[i];
-	}
+	randomize_parts(part_array_a, part_array_b, PARTICLE_NUMBER, tnu);
 
 	GLuint buf_part_curr_id;
 	glGenBuffers(1, &buf_part_curr_id);
@@ -259,12 +264,26 @@ int main(int argc, const char** argv)
 						case SDLK_ESCAPE:
 							running = 0;
 						break;
+
 						case SDLK_c:
 							randomize_colors(type_table, tn);
 							glBindBuffer(GL_ARRAY_BUFFER, buf_type_id);
 							glBufferData(GL_ARRAY_BUFFER,
 								tn * sizeof(part_type_t),
 								type_table, GL_STATIC_DRAW);
+						break;
+
+						case SDLK_p:
+							randomize_parts(part_array_a, part_array_b,
+								PARTICLE_NUMBER, tnu);
+							glBindBuffer(GL_ARRAY_BUFFER, buf_part_curr_id);
+							glBufferData(GL_ARRAY_BUFFER,
+								PARTICLE_NUMBER * sizeof(part_t),
+								part_array_a, GL_DYNAMIC_DRAW);
+							glBindBuffer(GL_ARRAY_BUFFER, buf_part_next_id);
+							glBufferData(GL_ARRAY_BUFFER,
+								PARTICLE_NUMBER * sizeof(part_t),
+								part_array_b, GL_DYNAMIC_DRAW);
 						break;
 					}
 				break;
