@@ -1,7 +1,7 @@
 
 #include "shaders.h"
 #include "utils.h"
-#include "srcinsert.h"
+#include "embedded.h"
 #include <stdio.h>
 #include <GL/glew.h>
 
@@ -99,21 +99,21 @@ void shprog_build_all(void)
 void shprog_build_fade(void)
 {
 	g_shprog_draw_fade = shprog_build(
-		g_srcinserted_fade_vert,
-		g_srcinserted_fade_geom,
-		g_srcinserted_fade_frag);
+		g_fade_vert,
+		g_fade_geom,
+		g_fade_frag);
 }
 
 void shprog_build_particles(void)
 {
 	g_shprog_draw_particles = shprog_build(
-		g_srcinserted_particles_vert,
-		g_srcinserted_particles_geom,
-		g_srcinserted_particles_frag);
+		g_particles_vert,
+		g_particles_geom,
+		g_particles_frag);
 }
 
 void shprog_build_iteruniv(void)
 {
 	g_shprog_comp_iteruniv = shprog_compute_build(
-		g_srcinserted_iteruniv_comp);
+		g_iteruniv_comp);
 }

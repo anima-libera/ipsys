@@ -1,10 +1,10 @@
 
-/* APSILG header file "random.h"
- * Allow to generate cool pseudo random numbers.
+/* ipsi header file "random.h"
+ * Allow to generate nice pseudo random numbers.
  * Implementations are in "random.c". */
 
-#ifndef __APSILG_header_random__
-#define __APSILG_header_random__
+#ifndef ipsi_header_random__
+#define ipsi_header_random__
 
 #include <stdint.h> /* uint32_t */
 
@@ -69,4 +69,4 @@ float rg_float(rg_t* rg, float inf, float sup);
 /* Perform a rg step and return a random seed object. */
 rg_seed_t rg_rg_seed(rg_t* rg);
 
-#endif /* __APSILG_header_random__ */
+#endif /* ipsi_header_random__ */

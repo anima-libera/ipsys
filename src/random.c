@@ -77,7 +77,7 @@ rg_t* rg_create_seeded(int size, rg_seed_t seed)
 	rg->version = RG_DEFAULT_VERSION;
 	rg_seed(rg, seed);
 	return rg;
-};
+}
 
 rg_t* rg_create_timeseeded(int size)
 {

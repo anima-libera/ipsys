@@ -1,12 +1,12 @@
 
-/* APSILG header file "shaders.h"
+/* ipsi header file "shaders.h"
  * Related to OpenGL shaders.
  * Implementations are in "shaders.c". */
 
 /* TODO: comment */
 
-#ifndef __APSILG_header_shaders__
-#define __APSILG_header_shaders__
+#ifndef ipsi_header_shaders__
+#define ipsi_header_shaders__
 
 #include <GL/glew.h>
 
@@ -20,4 +20,4 @@ void shprog_build_fade(void);
 void shprog_build_particles(void);
 void shprog_build_iteruniv(void);
 
-#endif /* __APSILG_header_shaders__ */
+#endif /* ipsi_header_shaders__ */

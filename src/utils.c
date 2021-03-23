@@ -49,7 +49,12 @@ char* read_file(const char* filepath)
 	int length = ftell(file);
 	fseek(file, 0, SEEK_SET);
 	char* buffer = xmalloc((length+1) * sizeof(char));
-	fread(buffer, sizeof(char), length, file);
+	int length_read = fread(buffer, sizeof(char), length, file);
+	if (length_read != length)
+	{
+		/* TODO */
+		fprintf(stderr, "TODO read_file\n");
+	}
 	buffer[length] = '\0';
 	fclose(file);
 	return buffer;

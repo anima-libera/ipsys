@@ -11,6 +11,22 @@
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
 
+void randomize_colors(part_type_t* type_table, unsigned int type_number)
+{
+	for (unsigned int i = 0; i < type_number; ++i)
+	{
+		type_table[i].br = rg_float(g_rg, 0.0f, 1.0f);
+		type_table[i].bg = rg_float(g_rg, 0.0f, 1.0f);
+		type_table[i].bb = rg_float(g_rg, 0.0f, 1.0f);
+		type_table[i].sr = rg_float(g_rg, -100.0f, 100.0f);
+		type_table[i].sg = rg_float(g_rg, -100.0f, 100.0f);
+		type_table[i].sb = rg_float(g_rg, -100.0f, 100.0f);
+		type_table[i].pr = rg_float(g_rg, -100.0f, 100.0f);
+		type_table[i].pg = rg_float(g_rg, -100.0f, 100.0f);
+		type_table[i].pb = rg_float(g_rg, -100.0f, 100.0f);
+	}
+}
+
 int main(int argc, const char** argv)
 {
 	(void)argc; (void)argv; /* Unused for now... */
@@ -43,18 +59,7 @@ int main(int argc, const char** argv)
 
 	part_type_t* type_table = xmalloc(tn * sizeof(part_type_t));
 	
-	for (unsigned int i = 0; i < tn; ++i)
-	{
-		type_table[i].br = rg_float(g_rg, 0.0f, 1.0f);
-		type_table[i].bg = rg_float(g_rg, 0.0f, 1.0f);
-		type_table[i].bb = rg_float(g_rg, 0.0f, 1.0f);
-		type_table[i].sr = rg_float(g_rg, -100.0f, 100.0f);
-		type_table[i].sg = rg_float(g_rg, -100.0f, 100.0f);
-		type_table[i].sb = rg_float(g_rg, -100.0f, 100.0f);
-		type_table[i].pr = rg_float(g_rg, -100.0f, 100.0f);
-		type_table[i].pg = rg_float(g_rg, -100.0f, 100.0f);
-		type_table[i].pb = rg_float(g_rg, -100.0f, 100.0f);
-	}
+	randomize_colors(type_table, tn);
 
 	for (unsigned int i = 0; i < tn; ++i)
 	for (unsigned int j = 0; j < CHANGE_TYPE_LAW_NUMBER; ++j)
@@ -88,25 +93,6 @@ int main(int argc, const char** argv)
 	glBindBuffer(GL_ARRAY_BUFFER, buf_type_id);
 	glBufferData(GL_ARRAY_BUFFER, tn * sizeof(part_type_t),
 		type_table, GL_STATIC_DRAW);
-
-	/* Randomize colors */
-	#if 0
-	for (int i = 0; i < type_number; ++i)
-	{
-		type_table[i].br = rg_float(g_rg, 0.0f, 1.0f);
-		type_table[i].bg = rg_float(g_rg, 0.0f, 1.0f);
-		type_table[i].bb = rg_float(g_rg, 0.0f, 1.0f);
-		type_table[i].sr = rg_float(g_rg, -1.0f, 1.0f);
-		type_table[i].sg = rg_float(g_rg, -1.0f, 1.0f);
-		type_table[i].sb = rg_float(g_rg, -1.0f, 1.0f);
-		type_table[i].pr = rg_float(g_rg, -1.0f, 1.0f);
-		type_table[i].pg = rg_float(g_rg, -1.0f, 1.0f);
-		type_table[i].pb = rg_float(g_rg, -1.0f, 1.0f);
-	}
-	glBindBuffer(GL_ARRAY_BUFFER, buf_type_id);
-	glBufferSubData(GL_ARRAY_BUFFER, 0,
-		type_number * sizeof(part_type_t), type_table);
-	#endif
 
 	pil_set_t* pil_set_table =
 		xmalloc(tn*tn * sizeof(pil_set_t));
@@ -274,77 +260,80 @@ int main(int argc, const char** argv)
 							running = 0;
 						break;
 						case SDLK_c:
-							;
+							randomize_colors(type_table, tn);
+							glBindBuffer(GL_ARRAY_BUFFER, buf_type_id);
+							glBufferData(GL_ARRAY_BUFFER,
+								tn * sizeof(part_type_t),
+								type_table, GL_STATIC_DRAW);
 						break;
 					}
 				break;
 			}
 		}
 
-		glViewport(0, 0, 800, 800);
-		glUseProgram(g_shprog_comp_iteruniv);
-		
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, buf_part_curr_id);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buf_part_next_id);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, buf_type_id);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, buf_pil_set_id);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, buf_info_id);
+		{
+			glUseProgram(g_shprog_comp_iteruniv);
+			
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, buf_part_curr_id);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buf_part_next_id);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, buf_type_id);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, buf_pil_set_id);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, buf_info_id);
 
-		glDispatchCompute(PARTICLE_NUMBER / WORK_GROUP_SIZE, 1, 1);
+			glDispatchCompute(PARTICLE_NUMBER / WORK_GROUP_SIZE, 1, 1);
+			glUseProgram((GLuint)0);
+			glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
 
-		glUseProgram((GLuint)0);
+			SWAP(GLuint, buf_part_curr_id, buf_part_next_id);
+		}
 
-		glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+		{
+			glViewport(0, 0, 800, 800);
+			glEnable(GL_BLEND);
+			glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
+			glBlendFunc(GL_ONE, GL_ONE);
+			glUseProgram(g_shprog_draw_fade);
+			glDrawArrays(GL_POINTS, 0, 1);
+			glUseProgram((GLuint)0);
+			glDisable(GL_BLEND);
+		}
 
-		SWAP(GLuint, buf_part_curr_id, buf_part_next_id);
+		{
+			#define ATTRIB_LOCATION_POS ((GLuint)0)
+			#define ATTRIB_LOCATION_COLOR ((GLuint)1)
+			#define ATTRIB_LOCATION_ANGLE ((GLuint)2)
+			#define ATTRIB_LOCATION_OLDPOS ((GLuint)3)
 
-		glEnable(GL_BLEND);
-		glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
-		glBlendFunc(GL_ONE, GL_ONE);
-		glUseProgram(g_shprog_draw_fade);
-		glDrawArrays(GL_POINTS, 0, 1);
-		glUseProgram((GLuint)0);
-		glDisable(GL_BLEND);
+			glViewport(0, 0, 800, 800);
+			glUseProgram(g_shprog_draw_particles);
+			glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
+			glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+			glEnableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
+			glEnableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
+			
+			glBindBuffer(GL_ARRAY_BUFFER, buf_part_curr_id);
+			glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
+				GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, x));
+			glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
+				GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, r));
+			glVertexAttribPointer(ATTRIB_LOCATION_ANGLE, 1, GL_FLOAT,
+				GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, angle));
+			glVertexAttribPointer(ATTRIB_LOCATION_OLDPOS, 2, GL_FLOAT,
+				GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, oldx));
 
-		#if 0
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		#endif
+			glDrawArrays(GL_POINTS, 0, PARTICLE_NUMBER);
+			
+			glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
+			glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+			glDisableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
+			glDisableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
+			glUseProgram((GLuint)0);
 
-		#define ATTRIB_LOCATION_POS ((GLuint)0)
-		#define ATTRIB_LOCATION_COLOR ((GLuint)1)
-		#define ATTRIB_LOCATION_ANGLE ((GLuint)2)
-		#define ATTRIB_LOCATION_OLDPOS ((GLuint)3)
-
-		glViewport(0, 0, 800, 800);
-		glUseProgram(g_shprog_draw_particles);
-		glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
-		glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
-		glEnableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
-		glEnableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
-		
-		glBindBuffer(GL_ARRAY_BUFFER, buf_part_curr_id);
-		glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
-			GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, x));
-		glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
-			GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, r));
-		glVertexAttribPointer(ATTRIB_LOCATION_ANGLE, 1, GL_FLOAT,
-			GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, angle));
-		glVertexAttribPointer(ATTRIB_LOCATION_OLDPOS, 2, GL_FLOAT,
-			GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, oldx));
-
-		glDrawArrays(GL_POINTS, 0, PARTICLE_NUMBER);
-		
-		glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
-		glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
-		glDisableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
-		glDisableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
-		glUseProgram((GLuint)0);
-
-		#undef ATTRIB_LOCATION_POS
-		#undef ATTRIB_LOCATION_COLOR
-		#undef ATTRIB_LOCATION_ANGLE
-		#undef ATTRIB_LOCATION_OLDPOS
+			#undef ATTRIB_LOCATION_POS
+			#undef ATTRIB_LOCATION_COLOR
+			#undef ATTRIB_LOCATION_ANGLE
+			#undef ATTRIB_LOCATION_OLDPOS
+		}
 
 		SDL_GL_SwapWindow(g_window);
 	}

@@ -1,17 +1,17 @@
 
-/* APSILG header file "universe.h"
+/* ipsi header file "universe.h"
  * Related to univesre parameters and particles.
  * Implementations are in "universe.c". */
 
 /* TODO: comment. */
 
-#ifndef __APSILG_header_universe__
-#define __APSILG_header_universe__
+#ifndef ipsi_header_universe__
+#define ipsi_header_universe__
 
 #include <GL/glew.h>
 
 /* Particle struct that holds all the data describing what is exclusive to a
- * single particle. Color is computed by the shader program.
+ * single particle.
  * Note that it is packed and that every field is 32-bit wide. */
 typedef struct part_t part_t;
 struct __attribute__((packed)) part_t
@@ -74,4 +74,4 @@ struct __attribute__((packed)) universe_info_t
 	GLuint type_number;
 };
 
-#endif /* __APSILG_header_universe__ */
+#endif /* ipsi_header_universe__ */

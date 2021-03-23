@@ -189,36 +189,36 @@ void main()
 	#undef T
 
 	#if 0
-	for (uint j = 0; j < CTL_NUMBER; ++j)
-	{
-		#define CTL type_table[i].ctl_array[j]
-		if (!(bool(CTL.used)))
-			continue;
-		if (bool(CTL.has_speed_min) && next[i].speed < CTL.speed_min)
-			continue;
-		if (bool(CTL.has_speed_max) && next[i].speed > CTL.speed_max)
-			continue;
-		if (bool(CTL.has_pressure_min) && next[i].pressure < CTL.pressure_min)
-			continue;
-		if (bool(CTL.has_pressure_max) && next[i].pressure > CTL.pressure_max)
-			continue;
-		if (bool(CTL.has_age_min) && next[i].age < CTL.age_min)
-			continue;
-		if (bool(CTL.has_age_max) && next[i].age > CTL.age_max)
-			continue;
-		if (rand(i) < CTL.probability)
+		for (uint j = 0; j < CTL_NUMBER; ++j)
 		{
-			next[i].type = CTL.new_type;
-			next[i].age = 0;
-			break;
+			#define CTL type_table[i].ctl_array[j]
+			if (!(bool(CTL.used)))
+				continue;
+			if (bool(CTL.has_speed_min) && next[i].speed < CTL.speed_min)
+				continue;
+			if (bool(CTL.has_speed_max) && next[i].speed > CTL.speed_max)
+				continue;
+			if (bool(CTL.has_pressure_min) && next[i].pressure < CTL.pressure_min)
+				continue;
+			if (bool(CTL.has_pressure_max) && next[i].pressure > CTL.pressure_max)
+				continue;
+			if (bool(CTL.has_age_min) && next[i].age < CTL.age_min)
+				continue;
+			if (bool(CTL.has_age_max) && next[i].age > CTL.age_max)
+				continue;
+			if (rand(i) < CTL.probability)
+			{
+				next[i].type = CTL.new_type;
+				next[i].age = 0;
+				break;
+			}
+			#undef CTL
 		}
-		#undef CTL
-	}
 
-	if (next[i].age > 100)
-	{
-		next[i].type = (curr[i].type + 1) % type_number;
-		next[i].age = 0;
-	}
+		if (next[i].age > 100)
+		{
+			next[i].type = (curr[i].type + 1) % type_number;
+			next[i].age = 0;
+		}
 	#endif
 }
