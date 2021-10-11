@@ -217,6 +217,13 @@ void mutate_pils(pil_set_t* pil_set_table, unsigned int type_number)
 	}
 }
 
+struct __attribute__((packed)) line_vertex_t
+{
+	GLfloat x, y;
+	GLfloat r, g, b;
+};
+typedef struct line_vertex_t line_vertex_t;
+
 int main(int argc, const char** argv)
 {
 	(void)argc; (void)argv;
@@ -338,6 +345,19 @@ int main(int argc, const char** argv)
 	#define WORK_GROUP_SIZE 256
 
 	setting_set_fade_factor(0.05f);
+
+	line_vertex_t line_vertex_array[4] = {
+		{.x = -0.97f, .y = +0.97f, .r = 1.0f, .g = 1.0f, .b = 1.0f},
+		{.x = +0.97f, .y = +0.97f, .r = 1.0f, .g = 1.0f, .b = 1.0f},
+		{.x = +0.97f, .y = +0.92f, .r = 1.0f, .g = 1.0f, .b = 1.0f},
+		{.x = -0.97f, .y = +0.92f, .r = 1.0f, .g = 1.0f, .b = 1.0f},
+	};
+
+	GLuint buf_ui_line_id;
+	glGenBuffers(1, &buf_ui_line_id);
+	glBindBuffer(GL_ARRAY_BUFFER, buf_ui_line_id);
+	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(line_vertex_t),
+		line_vertex_array, GL_STATIC_DRAW);
 
 	int running = 1;
 	while (running)
@@ -490,6 +510,33 @@ int main(int argc, const char** argv)
 			glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
 
 			SWAP(GLuint, buf_part_curr_id, buf_part_next_id);
+		}
+
+		{
+			#define ATTRIB_LOCATION_POS ((GLuint)0)
+			#define ATTRIB_LOCATION_COLOR ((GLuint)1)
+
+			glViewport(800, 0, 800, 800);
+			glUseProgram(g_shprog_draw_line);
+			glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
+			glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+			
+			glBindBuffer(GL_ARRAY_BUFFER, buf_ui_line_id);
+			glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
+				GL_FALSE, sizeof(line_vertex_t),
+				(void*)offsetof(line_vertex_t, x));
+			glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
+				GL_FALSE, sizeof(line_vertex_t),
+				(void*)offsetof(line_vertex_t, r));
+
+			glDrawArrays(GL_LINE_LOOP, 0, 4);
+			
+			glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
+			glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+			glUseProgram((GLuint)0);
+
+			#undef ATTRIB_LOCATION_POS
+			#undef ATTRIB_LOCATION_COLOR
 		}
 
 		{
