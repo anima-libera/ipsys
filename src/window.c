@@ -16,7 +16,7 @@ int init_g_graphics(void)
 	}
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
-	g_window = SDL_CreateWindow("ipsi",
+	g_window = SDL_CreateWindow("ipsys",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1600, 800,
 		SDL_WINDOW_OPENGL);
 	if (g_window == NULL)

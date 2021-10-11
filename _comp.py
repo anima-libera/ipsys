@@ -49,7 +49,7 @@ option_debug = cmdline_has_option("-d", "--debug")
 release_build = not option_debug
 src_dir_name = "src"
 bin_dir_name = "bin"
-bin_name = "ipsi"
+bin_name = "ipsys"
 
 # Help message if -h
 if option_help:
@@ -122,6 +122,7 @@ if release_build:
 	build_command_args.append("-fno-stack-protector")
 	build_command_args.append("-flto")
 build_command_args.append("-lGL")
+build_command_args.append("-DGLEW_STATIC")
 build_command_args.append("-lGLEW")
 build_command_args.append("`sdl2-config --cflags --libs`") # See the SDL2 doc
 build_command_args.append("-lm")

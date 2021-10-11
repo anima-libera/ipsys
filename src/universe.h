@@ -26,7 +26,7 @@ struct __attribute__((packed)) part_t
 	GLuint age;
 };
 
-#define CHANGE_TYPE_LAW_NUMBER 8
+#define CHANGE_TYPE_LAW_NUMBER 3
 typedef struct change_type_law_t change_type_law_t;
 struct __attribute__((packed)) change_type_law_t
 {

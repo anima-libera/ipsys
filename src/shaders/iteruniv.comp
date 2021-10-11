@@ -22,7 +22,7 @@ struct pil_t
 };
 
 /* CTL: Change Type Law */
-#define CTL_NUMBER 8
+#define CTL_NUMBER 3
 struct ctl_t
 {
 	uint used;
@@ -81,6 +81,10 @@ layout(shared, binding = 4) buffer buffer_info
 {
 	uint type_number;
 };
+
+float rand(vec2 v){
+	return fract(sin(dot(v.xy, vec2(12.9898, 78.233))) * 43758.5453);
+}
 
 void main()
 {
@@ -188,10 +192,10 @@ void main()
 	next[i].b = T.bb + next[i].speed * T.sb + next[i].pressure * T.pb;
 	#undef T
 
-	#if 0
+	#if 1
 		for (uint j = 0; j < CTL_NUMBER; ++j)
 		{
-			#define CTL type_table[i].ctl_array[j]
+			#define CTL type_table[next[i].type].ctl_array[j]
 			if (!(bool(CTL.used)))
 				continue;
 			if (bool(CTL.has_speed_min) && next[i].speed < CTL.speed_min)
@@ -206,7 +210,7 @@ void main()
 				continue;
 			if (bool(CTL.has_age_max) && next[i].age > CTL.age_max)
 				continue;
-			if (rand(i) < CTL.probability)
+			if (rand(vec2(next[i].x, next[i].y)) < CTL.probability)
 			{
 				next[i].type = CTL.new_type;
 				next[i].age = 0;
@@ -215,10 +219,12 @@ void main()
 			#undef CTL
 		}
 
-		if (next[i].age > 100)
-		{
-			next[i].type = (curr[i].type + 1) % type_number;
-			next[i].age = 0;
-		}
+		#if 0
+			if (next[i].age > 100)
+			{
+				next[i].type = (curr[i].type + 1) % type_number;
+				next[i].age = 0;
+			}
+		#endif
 	#endif
 }

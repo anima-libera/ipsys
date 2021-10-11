@@ -1,9 +1,5 @@
 
-# ipsi - Ipsi Particle System of Ipsi
-
-## Current status
-
-This is a cool "old" project that I intend to take very far.
+# ipsys - Ipsys Particle System Yey letS go
 
 ## Build and run
 
@@ -21,12 +17,18 @@ python3 _comp.py
 
 ## TODO
 
-- Read all the code to understand what it was all about as it is quite old.
+- LINK STATICALLY WITH GLEW
+- Add mouse controls in the universe.
+- Add key l to randomize trace length.
+- Use only one CPU-side buffer for particles.
 - Clean all the code and reorganize it in a nice way.
-  - The `main.c` file should we way smaller that it currently is.
-  - Every function comment should be on the 3rd person.
+  - The `main.c` file should be way smaller that it currently is.
+  - Every function comment should be at the 3rd person.
   - Comment everything that seem to be needing it.
+- Text rendering.
+- Built-in console.
 - Design a text-based modular data representation format, then add save/load.
 - Add a modular interface.
 - Make the build system usable with clang and on Windows.
 - Allow modding ?
+- View the fields.
