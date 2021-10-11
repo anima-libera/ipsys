@@ -9,9 +9,10 @@ Options:
   -h  --help        Prints this docstring.
   -l  --launch      Executes the bin if compiled, with what follows as args.
   -d  --debug       Standard debuging build, defines DEBUG, launches with -d.
+  --opengl-notifications     Enables OpenGL notifications.
 
 Example usage for debug:
-  {this_script} -d -l -d
+  {this_script} -d -l
 """
 
 import sys
@@ -46,6 +47,7 @@ def cmdline_has_option(*option_names):
 	return False
 option_help = cmdline_has_option("-h", "--help")
 option_debug = cmdline_has_option("-d", "--debug")
+option_opengl_notifications = cmdline_has_option("--opengl-notifications")
 release_build = not option_debug
 src_dir_name = "src"
 bin_dir_name = "bin"
@@ -60,11 +62,11 @@ if option_help:
 
 # Embed content
 embedded_header_file_name = "embedded.h" # See this file for some explanations
-embedded_source_file_name = "embedded.c"
+embedded_source_file_name = "embedded.c" # This one will be overwritten
 embed_re = r"EMBEDDED\s*\(\s*\"([^\"]+)\"\s*\)\s*([^\s][^;]+[^\s])\s*;"
 def escaped_file_content(filepath):
 	if option_debug:
-		print("Embed file \"{}\"".format(filepath))
+		print(f"Embed file \"{filepath}\"")
 	try:
 		with open(filepath, "r") as file:
 			return file.read().translate({
@@ -73,23 +75,27 @@ def escaped_file_content(filepath):
 	except FileNotFoundError as error:
 		print("\x1b[31mEmbedded file error:\x1b[39m " +
 			"The embedded content generator couldn't find the file " +
-			"\"{}\" used in an EMBEDDED macro in the ".format(filepath) +
-			"\"{}\" header file.".format(embedded_header_file_name))
+			f"\"{filepath}\" used in an EMBEDDED macro in the " +
+			f"\"{embedded_header_file_name}\" header file.")
 		raise error
-em_content = []
-with open(os.path.join(src_dir_name, embedded_header_file_name), "r") as ehf:
-	for match in re.finditer(embed_re, ehf.read(), flags = re.MULTILINE):
-		em_content.append("/* Content of \"{}\". */".format(match.group(1)))
-		em_content.append("{} = \"{}\";".format(match.group(2),
-			escaped_file_content(src_dir_name + "/" + match.group(1))))
-		em_content.append("")
-with open(os.path.join(src_dir_name, embedded_source_file_name), "w") as esf:
-	esf.write("\n")
-	esf.write("/* This file is overwritten at each compilation.\n")
-	esf.write(" * Do not modify, see \"{}\" ".format(
-		embedded_header_file_name))
-	esf.write("or \"_comp.py\" instead. */\n\n")
-	esf.write("\n".join(em_content)) # There is a trailing newline it's ok
+generated_c = []
+generated_c.append("")
+generated_c.append("/* This file is overwritten at each compilation.")
+generated_c.append(f" * Do not modify, see \"{embedded_header_file_name}\" " +
+	"or \"_comp.py\" instead. */")
+embedded_header_path = os.path.join(src_dir_name, embedded_header_file_name)
+with open(embedded_header_path, "r") as embedded_header_file:
+	for match in re.finditer(embed_re, embedded_header_file.read()):
+		partial_file_path = match.group(1)
+		file_path = os.path.join(src_dir_name, partial_file_path)
+		escaped_content = escaped_file_content(file_path)
+		variable_declaration = match.group(2)
+		generated_c.append("")
+		generated_c.append(f"/* Content of \"{file_path}\". */")
+		generated_c.append(f"{variable_declaration} = \"{escaped_content}\";")
+embedded_source_path = os.path.join(src_dir_name, embedded_source_file_name)
+with open(embedded_source_path, "w") as embedded_source_file:
+	embedded_source_file.write("\n".join(generated_c) + "\n")
 
 # List src files
 src_file_names = []
@@ -121,22 +127,25 @@ if release_build:
 	build_command_args.append("-O2")
 	build_command_args.append("-fno-stack-protector")
 	build_command_args.append("-flto")
+if option_opengl_notifications:
+	build_command_args.append("-DENABLE_OPENGL_NOTIFICATIONS")
 build_command_args.append("-lGL")
 build_command_args.append("-DGLEW_STATIC")
 build_command_args.append("-lGLEW")
 build_command_args.append("`sdl2-config --cflags --libs`") # See the SDL2 doc
 build_command_args.append("-lm")
 build_command = " ".join(build_command_args)
+print(("RELEASE" if release_build else "DEBUG") + " BUILD")
 print_blue(build_command)
 build_exit_status = os.system(build_command)
 
 # Launch if -l
 if option_launch and build_exit_status == 0:
 	launch_command_args = ["./" + bin_name]
-	for launch_arg in launch_args:
-		launch_command_args.append(launch_arg)
 	if option_debug:
 		launch_command_args.append("-d")
+	for launch_arg in launch_args:
+		launch_command_args.append(launch_arg)
 	launch_command = " ".join(launch_command_args)
 	os.chdir(bin_dir_name)
 	print_blue(launch_command)
@@ -145,4 +154,4 @@ if option_launch and build_exit_status == 0:
 	if bin_dir_name != ".":
 		os.chdir("..")
 	if launch_exit_status != 0:
-		print_blue("exit status {}".format(launch_exit_status))
+		print_blue(f"exit status {launch_exit_status}")
