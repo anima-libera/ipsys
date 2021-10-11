@@ -7,6 +7,7 @@
 SDL_Window* g_window = NULL;
 SDL_GLContext g_opengl_context = NULL;
 
+#if 0
 int init_g_graphics(void)
 {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
@@ -71,3 +72,4 @@ void cleanup_g_graphics(void)
 	g_window = NULL;
 	SDL_Quit();
 }
+#endif
