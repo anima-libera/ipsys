@@ -1,11 +1,11 @@
 
-/* ipsi header file "utils.h"
+/* Ipsys header file "utils.h"
  * Declare nice wrappers around std features that can save some lines of code,
  * and other functions and macro that feels like they should end up here.
  * Implementations are in "utils.c". */
 
-#ifndef ipsi_header_utils__
-#define ipsi_header_utils__
+#ifndef IPSYS_HEADER_UTILS__
+#define IPSYS_HEADER_UTILS__
 
 /* The true fundamental circle constant. */
 #define TAU 6.28318530717f
@@ -35,4 +35,4 @@ char* read_file(const char* filepath);
 #define ORDER(type_, inf_, sup_) \
 	do{ if (inf_ > sup_) { SWAP(type_, inf_, sup_); } }while(0)
 
-#endif /* ipsi_header_utils__ */
+#endif /* IPSYS_HEADER_UTILS__ */

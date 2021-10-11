@@ -1,12 +1,12 @@
 
-/* ipsi header file "universe.h"
+/* Ipsys header file "universe.h"
  * Related to univesre parameters and particles.
  * Implementations are in "universe.c". */
 
 /* TODO: comment. */
 
-#ifndef ipsi_header_universe__
-#define ipsi_header_universe__
+#ifndef IPSYS_HEADER_UNIVERSE__
+#define IPSYS_HEADER_UNIVERSE__
 
 #include <GL/glew.h>
 
@@ -74,4 +74,4 @@ struct __attribute__((packed)) universe_info_t
 	GLuint type_number;
 };
 
-#endif /* ipsi_header_universe__ */
+#endif /* IPSYS_HEADER_UNIVERSE__ */

@@ -1,6 +1,6 @@
 
 /* This file is overwritten at each compilation.
- * Do not modify, see "embedded.h" or "comp.py" instead. */
+ * Do not modify, see "embedded.h" or "_comp.py" instead. */
 
 /* Content of "shaders/particles.vert". */
 const char* g_particles_vert = "\n#version 430 core\nlayout(location = 0) in vec2 in_pos;\nlayout(location = 1) in vec3 in_color;\nlayout(location = 2) in float in_angle;\nlayout(location = 3) in vec2 in_oldpos;\nout vec3 v_color;\nout float v_angle;\nout float v_radius;\nout vec2 v_oldpos;\n\n#define DISPLAY_RADIUS 0.006\n\nvoid main()\n{\n\tgl_Position = vec4(in_pos, 0.0, 1.0);\n\tv_color = in_color;\n\tv_angle = in_angle;\n\tv_radius = DISPLAY_RADIUS;\n\tv_oldpos = in_oldpos;\n}\n";

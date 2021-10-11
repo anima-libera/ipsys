@@ -1,10 +1,10 @@
 
-/* ipsi header file "window.h"
+/* Ipsys header file "window.h"
  * Related to the SDL2 window and the OpenGL context.
  * Implementations are in "window.c". */
 
-#ifndef ipsi_header_window__
-#define ipsi_header_window__
+#ifndef IPSYS_HEADER_WINDOW__
+#define IPSYS_HEADER_WINDOW__
 
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
@@ -29,4 +29,4 @@ int init_g_graphics(void);
 /* Clean up and destroy what is initialized and created by init_g_graphics. */
 void cleanup_g_graphics(void);
 
-#endif /* ipsi_header_window__ */
+#endif /* IPSYS_HEADER_WINDOW__ */

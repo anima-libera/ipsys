@@ -1,12 +1,12 @@
 
-/* ipsi header file "embedded.h"
+/* Ipsys header file "embedded.h"
  * This file is read by the compilation script "_comp.py" in order to generate
  * a compilation unit that embed the desired content described here at each
  * compilation.
  * See "_comp.py" for more. */
 
-#ifndef ipsi_header_embedded__
-#define ipsi_header_embedded__
+#ifndef IPSYS_HEADER_EMBEDDED__
+#define IPSYS_HEADER_EMBEDDED__
 
 /* If this macro is used as would be the extern keayword in a variable
  * declaration, and if filename_ is a string literal, then the compilation
@@ -25,4 +25,4 @@ EMBEDDED("shaders/fade.geom") const char* g_fade_geom;
 EMBEDDED("shaders/fade.frag") const char* g_fade_frag;
 EMBEDDED("shaders/iteruniv.comp") const char* g_iteruniv_comp;
 
-#endif /* ipsi_header_embedded__ */
+#endif /* IPSYS_HEADER_EMBEDDED__ */
