@@ -217,12 +217,12 @@ void mutate_pils(pil_set_t* pil_set_table, unsigned int type_number)
 	}
 }
 
-struct __attribute__((packed)) line_vertex_t
+struct __attribute__((packed)) ui_vertex_t
 {
 	GLfloat x, y;
 	GLfloat r, g, b;
 };
-typedef struct line_vertex_t line_vertex_t;
+typedef struct ui_vertex_t ui_vertex_t;
 
 int main(int argc, const char** argv)
 {
@@ -346,18 +346,81 @@ int main(int argc, const char** argv)
 
 	setting_set_fade_factor(0.05f);
 
-	line_vertex_t line_vertex_array[4] = {
-		{.x = -0.97f, .y = +0.97f, .r = 1.0f, .g = 1.0f, .b = 1.0f},
-		{.x = +0.97f, .y = +0.97f, .r = 1.0f, .g = 1.0f, .b = 1.0f},
-		{.x = +0.97f, .y = +0.92f, .r = 1.0f, .g = 1.0f, .b = 1.0f},
-		{.x = -0.97f, .y = +0.92f, .r = 1.0f, .g = 1.0f, .b = 1.0f},
+	const float ui_margin = 6.5f;
+	const float ui_size = 20.0f;
+	const float ui_length = (800.0f - ui_margin) - ui_margin;
+
+	ui_vertex_t ui_line_vertex_array[4] = {
+		{.x = ui_margin,          .y = 800.0f - ui_margin          },
+		{.x = 800.0f - ui_margin, .y = 800.0f - ui_margin          },
+		{.x = 800.0f - ui_margin, .y = 800.0f - ui_margin - ui_size},
+		{.x = ui_margin,          .y = 800.0f - ui_margin - ui_size},
 	};
+
+	for (unsigned int i = 0; i < 4; i++)
+	{
+		ui_line_vertex_array[i].r = 1.0f;
+		ui_line_vertex_array[i].g = 1.0f;
+		ui_line_vertex_array[i].b = 1.0f;
+	}
 
 	GLuint buf_ui_line_id;
 	glGenBuffers(1, &buf_ui_line_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_ui_line_id);
-	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(line_vertex_t),
-		line_vertex_array, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(ui_vertex_t),
+		ui_line_vertex_array, GL_STATIC_DRAW);
+
+	ui_vertex_t ui_rect_vertex_array[4];
+
+	float ui_rect_filled_y =
+		ui_length * g_setting_read_fade_factor / SETTING_FADE_FACTOR_MAX;
+	ui_rect_vertex_array[0] = (ui_vertex_t){
+		.x = 800.0f - ui_margin - ui_rect_filled_y,
+		.y = 800.0f - ui_margin
+	};
+	ui_rect_vertex_array[1] = (ui_vertex_t){
+		.x = ui_margin, .y = 800.0f - ui_margin
+	};
+	ui_rect_vertex_array[2] = (ui_vertex_t){
+		.x = 800.0f - ui_margin - ui_rect_filled_y,
+		.y = 800.0f - ui_margin - ui_size
+	};
+	ui_rect_vertex_array[3] = (ui_vertex_t){
+		.x = ui_margin, .y = 800.0f - ui_margin - ui_size
+	};
+
+	for (unsigned int i = 0; i < 4; i++)
+	{
+		ui_rect_vertex_array[i].r = 1.0f;
+		ui_rect_vertex_array[i].g = 1.0f;
+		ui_rect_vertex_array[i].b = 0.8f;
+	}
+
+	GLuint buf_ui_rect_id;
+	glGenBuffers(1, &buf_ui_rect_id);
+	glBindBuffer(GL_ARRAY_BUFFER, buf_ui_rect_id);
+	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(ui_vertex_t),
+		ui_rect_vertex_array, GL_STATIC_DRAW);
+
+	ui_vertex_t ui_bg_vertex_array[4] = {
+		{.x = 800.0f, .y = 800.0f},
+		{.x =   0.0f, .y = 800.0f},
+		{.x = 800.0f, .y =   0.0f},
+		{.x =   0.0f, .y =   0.0f},
+	};
+
+	for (unsigned int i = 0; i < 4; i++)
+	{
+		ui_bg_vertex_array[i].r = 0.0f;
+		ui_bg_vertex_array[i].g = 0.05f;
+		ui_bg_vertex_array[i].b = 0.2f;
+	}
+
+	GLuint buf_ui_bg_id;
+	glGenBuffers(1, &buf_ui_bg_id);
+	glBindBuffer(GL_ARRAY_BUFFER, buf_ui_bg_id);
+	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(ui_vertex_t),
+		ui_bg_vertex_array, GL_STATIC_DRAW);
 
 	int running = 1;
 	while (running)
@@ -374,8 +437,45 @@ int main(int argc, const char** argv)
 				case SDL_MOUSEBUTTONDOWN:
 					if (event.button.x >= 800)
 					{
-						setting_set_fade_factor(
-							((float)event.button.x-800.0f)/4000.0f);
+						const float x = event.button.x - 800;
+						const float y = 800 - event.button.y;
+
+						if (ui_margin <= x &&
+							x <= 800.0f - ui_margin &&
+							800.0f - ui_margin - ui_size <= y &&
+							y <= 800.0f - ui_margin)
+						{
+							const float value = (x - ui_margin) / ui_length * SETTING_FADE_FACTOR_MAX;
+							setting_set_fade_factor(value);
+
+							ui_rect_filled_y =
+								ui_length * (1.0f - g_setting_read_fade_factor / SETTING_FADE_FACTOR_MAX);
+							ui_rect_vertex_array[0] = (ui_vertex_t){
+								.x = 800.0f - ui_margin - ui_rect_filled_y,
+								.y = 800.0f - ui_margin
+							};
+							ui_rect_vertex_array[1] = (ui_vertex_t){
+								.x = ui_margin, .y = 800.0f - ui_margin
+							};
+							ui_rect_vertex_array[2] = (ui_vertex_t){
+								.x = 800.0f - ui_margin - ui_rect_filled_y,
+								.y = 800.0f - ui_margin - ui_size
+							};
+							ui_rect_vertex_array[3] = (ui_vertex_t){
+								.x = ui_margin, .y = 800.0f - ui_margin - ui_size
+							};
+
+							for (unsigned int i = 0; i < 4; i++)
+							{
+								ui_rect_vertex_array[i].r = 1.0f;
+								ui_rect_vertex_array[i].g = 1.0f;
+								ui_rect_vertex_array[i].b = 0.8f;
+							}
+
+							glBindBuffer(GL_ARRAY_BUFFER, buf_ui_rect_id);
+							glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(ui_vertex_t),
+								ui_rect_vertex_array, GL_STATIC_DRAW);
+						}
 					}
 					else
 					{
@@ -517,19 +617,73 @@ int main(int argc, const char** argv)
 			#define ATTRIB_LOCATION_COLOR ((GLuint)1)
 
 			glViewport(800, 0, 800, 800);
-			glUseProgram(g_shprog_draw_line);
+			glUseProgram(g_shprog_draw_ui_line);
+			glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
+			glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+			
+			glBindBuffer(GL_ARRAY_BUFFER, buf_ui_bg_id);
+			glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
+				GL_FALSE, sizeof(ui_vertex_t),
+				(void*)offsetof(ui_vertex_t, x));
+			glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
+				GL_FALSE, sizeof(ui_vertex_t),
+				(void*)offsetof(ui_vertex_t, r));
+
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+			
+			glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
+			glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+			glUseProgram((GLuint)0);
+
+			#undef ATTRIB_LOCATION_POS
+			#undef ATTRIB_LOCATION_COLOR
+		}
+
+		{
+			#define ATTRIB_LOCATION_POS ((GLuint)0)
+			#define ATTRIB_LOCATION_COLOR ((GLuint)1)
+
+			glViewport(800, 0, 800, 800);
+			glUseProgram(g_shprog_draw_ui_line);
 			glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
 			glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
 			
 			glBindBuffer(GL_ARRAY_BUFFER, buf_ui_line_id);
 			glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
-				GL_FALSE, sizeof(line_vertex_t),
-				(void*)offsetof(line_vertex_t, x));
+				GL_FALSE, sizeof(ui_vertex_t),
+				(void*)offsetof(ui_vertex_t, x));
 			glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
-				GL_FALSE, sizeof(line_vertex_t),
-				(void*)offsetof(line_vertex_t, r));
+				GL_FALSE, sizeof(ui_vertex_t),
+				(void*)offsetof(ui_vertex_t, r));
 
 			glDrawArrays(GL_LINE_LOOP, 0, 4);
+			
+			glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
+			glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+			glUseProgram((GLuint)0);
+
+			#undef ATTRIB_LOCATION_POS
+			#undef ATTRIB_LOCATION_COLOR
+		}
+
+		{
+			#define ATTRIB_LOCATION_POS ((GLuint)0)
+			#define ATTRIB_LOCATION_COLOR ((GLuint)1)
+
+			glViewport(800, 0, 800, 800);
+			glUseProgram(g_shprog_draw_ui_line);
+			glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
+			glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+			
+			glBindBuffer(GL_ARRAY_BUFFER, buf_ui_rect_id);
+			glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
+				GL_FALSE, sizeof(ui_vertex_t),
+				(void*)offsetof(ui_vertex_t, x));
+			glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
+				GL_FALSE, sizeof(ui_vertex_t),
+				(void*)offsetof(ui_vertex_t, r));
+
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 			
 			glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
 			glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);

@@ -86,44 +86,27 @@ static GLuint shprog_compute_build(const char* src_comp)
 }
 
 GLuint g_shprog_draw_fade = 0;
-GLuint g_shprog_draw_line = 0;
+GLuint g_shprog_draw_ui_line = 0;
 GLuint g_shprog_draw_particles = 0;
 GLuint g_shprog_comp_iteruniv = 0;
 
 void shprog_build_all(void)
 {
-	shprog_build_fade();
-	shprog_build_line();
-	shprog_build_particles();
-	shprog_build_iteruniv();
-}
-
-void shprog_build_fade(void)
-{
 	g_shprog_draw_fade = shprog_build(
 		g_fade_vert,
 		g_fade_geom,
 		g_fade_frag);
-}
 
-void shprog_build_line(void)
-{
-	g_shprog_draw_line = shprog_build(
-		g_line_vert,
+	g_shprog_draw_ui_line = shprog_build(
+		g_ui_line_vert,
 		NULL,
-		g_line_frag);
-}
+		g_ui_line_frag);
 
-void shprog_build_particles(void)
-{
 	g_shprog_draw_particles = shprog_build(
 		g_particles_vert,
 		g_particles_geom,
 		g_particles_frag);
-}
 
-void shprog_build_iteruniv(void)
-{
 	g_shprog_comp_iteruniv = shprog_compute_build(
 		g_iteruniv_comp);
 }
