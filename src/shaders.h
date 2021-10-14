@@ -1,20 +1,25 @@
 
-/* Ipsys header file "shaders.h"
- * Related to OpenGL shaders.
+/* OpenGL shader programs declarations and building functions.
  * Implementations are in "shaders.c". */
-
-/* TODO: comment */
 
 #ifndef IPSYS_HEADER_SHADERS__
 #define IPSYS_HEADER_SHADERS__
 
 #include <GL/glew.h>
 
+/* These are OpenGL shader program ids that can be given to glUseProgram.
+ * They are set to valid shader program id values by a call to shprog_build_all
+ * and unset by a call to shprog_destroy_all. */
 extern GLuint g_shprog_draw_fade;
-extern GLuint g_shprog_draw_ui_line;
+extern GLuint g_shprog_draw_ui_simple;
 extern GLuint g_shprog_draw_particles;
 extern GLuint g_shprog_comp_iteruniv;
 
-void shprog_build_all(void);
+/* Builds all the shader programs.
+ * Returns -1 if anything goes wrong, returns 0 if everything goes well. */
+int shprog_build_all(void);
+
+/* Destroys all the shader programs built by a call to shprog_build_all. */
+void shprog_destroy_all(void);
 
 #endif /* IPSYS_HEADER_SHADERS__ */

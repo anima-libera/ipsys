@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#if 0
 void* xmalloc(size_t size)
 {
 	void* ptr = malloc(size);
@@ -36,6 +37,7 @@ void* xrealloc(void* ptr, size_t size)
 	}
 	return newptr;
 }
+#endif
 
 char* read_file(const char* filepath)
 {
@@ -48,14 +50,16 @@ char* read_file(const char* filepath)
 	fseek(file, 0, SEEK_END);
 	int length = ftell(file);
 	fseek(file, 0, SEEK_SET);
-	char* buffer = xmalloc((length+1) * sizeof(char));
+	char* buffer = malloc((length+1) * sizeof(char));
 	int length_read = fread(buffer, sizeof(char), length, file);
+	fclose(file);
 	if (length_read != length)
 	{
-		/* TODO */
-		fprintf(stderr, "TODO read_file\n");
+		fprintf(stderr, "File error: failed to properly read \"%s\"\n",
+			filepath);
+		free(buffer);
+		return NULL;
 	}
 	buffer[length] = '\0';
-	fclose(file);
 	return buffer;
 }

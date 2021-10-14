@@ -1,9 +1,8 @@
 
-/* Ipsys header file "universe.h"
- * Related to univesre parameters and particles.
+/* Univesre parameters, laws and particles.
  * Implementations are in "universe.c". */
 
-/* TODO: comment. */
+/* TODO: Comment. */
 
 #ifndef IPSYS_HEADER_UNIVERSE__
 #define IPSYS_HEADER_UNIVERSE__
@@ -13,7 +12,6 @@
 /* Particle struct that holds all the data describing what is exclusive to a
  * single particle.
  * Note that it is packed and that every field is 32-bit wide. */
-typedef struct part_t part_t;
 struct __attribute__((packed)) part_t
 {
 	GLfloat x, y;
@@ -25,9 +23,9 @@ struct __attribute__((packed)) part_t
 	GLuint type;
 	GLuint age;
 };
+typedef struct part_t part_t;
 
 #define CHANGE_TYPE_LAW_NUMBER 3
-typedef struct change_type_law_t change_type_law_t;
 struct __attribute__((packed)) change_type_law_t
 {
 	GLuint used;
@@ -39,7 +37,7 @@ struct __attribute__((packed)) change_type_law_t
 	GLuint has_age_max; GLuint age_max;
 	GLuint new_type; GLfloat probability;
 };
-typedef struct part_type_t part_type_t;
+typedef struct change_type_law_t change_type_law_t;
 struct __attribute__((packed)) part_type_t
 {
 	GLfloat br, bg, bb; /* color base */
@@ -47,31 +45,32 @@ struct __attribute__((packed)) part_type_t
 	GLfloat pr, pg, pb; /* color pressure */
 	change_type_law_t change_type_law_array[CHANGE_TYPE_LAW_NUMBER];
 };
+typedef struct part_type_t part_type_t;
 
 #define PISL_STEP_NUMBER 90
-typedef struct pil_step_t pil_step_t;
 struct __attribute__((packed)) pil_step_t
 {
 	GLfloat offset;
 	GLfloat slope;
 };
-typedef struct pil_t pil_t;
+typedef struct pil_step_t pil_step_t;
 struct __attribute__((packed)) pil_t
 {
 	pil_step_t steps[PISL_STEP_NUMBER];
 };
-typedef struct pil_set_t pil_set_t;
+typedef struct pil_t pil_t;
 struct __attribute__((packed)) pil_set_t
 {
 	pil_t attraction;
 	pil_t angle;
-	pil_t speed; /* pos : speed -> +inf (1->*2) | neg : speed -> 0 (-1->/2) */
+	pil_t speed; /* pos: speed -> +inf (1->*2); neg: speed -> 0 (-1->/2) */
 };
+typedef struct pil_set_t pil_set_t;
 
-typedef struct universe_info_t universe_info_t;
 struct __attribute__((packed)) universe_info_t
 {
 	GLuint type_number;
 };
+typedef struct universe_info_t universe_info_t;
 
 #endif /* IPSYS_HEADER_UNIVERSE__ */

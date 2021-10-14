@@ -11,11 +11,11 @@ const char* g_particles_geom = "\n#version 430 core\nlayout(points) in;\nlayout(
 /* Content of "src/shaders/particles.frag". */
 const char* g_particles_frag = "\n#version 430 core\nin vec3 g_color;\nout vec4 out_color;\n\nvoid main()\n{\n\tout_color = vec4(g_color, 1.0);\n}\n";
 
-/* Content of "src/shaders/ui_line.vert". */
-const char* g_ui_line_vert = "\n#version 430 core\nlayout(location = 0) in vec2 in_pos;\nlayout(location = 1) in vec3 in_color;\nout vec3 v_color;\n\nvoid main()\n{\n\tgl_Position = vec4(in_pos / 800.0 * 2.0 - 1.0, 0.0, 1.0);\n\tv_color = in_color;\n}\n";
+/* Content of "src/shaders/ui_simple.vert". */
+const char* g_ui_simple_vert = "\n#version 430 core\nlayout(location = 0) in vec2 in_pos;\nlayout(location = 1) in vec3 in_color;\nout vec3 v_color;\n\nvoid main()\n{\n\tgl_Position = vec4(in_pos / 800.0 * 2.0 - 1.0, 0.0, 1.0);\n\tv_color = in_color;\n}\n";
 
-/* Content of "src/shaders/ui_line.frag". */
-const char* g_ui_line_frag = "\n#version 430 core\nin vec3 v_color;\nout vec4 out_color;\n\nvoid main()\n{\n\tout_color = vec4(v_color, 1.0);\n}\n";
+/* Content of "src/shaders/ui_simple.frag". */
+const char* g_ui_simple_frag = "\n#version 430 core\nin vec3 v_color;\nout vec4 out_color;\n\nvoid main()\n{\n\tout_color = vec4(v_color, 1.0);\n}\n";
 
 /* Content of "src/shaders/fade.vert". */
 const char* g_fade_vert = "\n#version 430 core\n\nvoid main()\n{\n\tgl_Position = vec4(0.0, 0.0, 0.0, 1.0);\n}\n";

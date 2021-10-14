@@ -10,6 +10,7 @@
 /* The true fundamental circle constant. */
 #define TAU 6.28318530717f
 
+#if 0
 /* Same as in "stddef.h". */
 typedef unsigned long int size_t;
 
@@ -22,8 +23,9 @@ void* xcalloc(size_t number, size_t size);
 /* The common realloc wrapper that produces an error and returns NULL if the
  * reallocation fails. */
 void* xrealloc(void* ptr, size_t size);
+#endif
 
-/* Read the file at the given path and return its content in a buffer that
+/* Reads the file at the given path and returns its content in a buffer that
  * needs to be freed. */
 char* read_file(const char* filepath);
 

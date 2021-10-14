@@ -3,17 +3,17 @@
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
 
-/* Return the name of the source parameter of the debug message callback. */
+/* Returns the name of the source parameter of the debug message callback. */
 static const char* opengl_dbgmsg_source_name(GLenum source);
 
-/* Return the name of the type parameter of the debug message callback. */
+/* Returns the name of the type parameter of the debug message callback. */
 static const char* opengl_dbgmsg_type_name(GLenum type);
 
-/* Return the name of the severity parameter of the debug message callback. */
+/* Returns the name of the severity parameter of the debug message callback. */
 static const char* opengl_dbgmsg_severity_name(GLenum type);
 
-/* Debug message callback given to glDebugMessageCallback. Print an error
- * message to stderr. */
+/* Debug message callback given to glDebugMessageCallback.
+ * Prints an error message to stderr. */
 static void GLAPIENTRY opengl_dbgmsg_callback(
 	GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
 	const GLchar* message, const void* user_param);

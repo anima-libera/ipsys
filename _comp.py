@@ -120,6 +120,7 @@ build_command_args.append("-Wall")
 build_command_args.append("-Wextra")
 build_command_args.append("-pedantic")
 build_command_args.append("-Wno-overlength-strings")
+build_command_args.append("-Wno-maybe-uninitialized")
 if option_debug:
 	build_command_args.append("-DDEBUG")
 	build_command_args.append("-g")
