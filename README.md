@@ -8,7 +8,7 @@ randomly generated particule systems.
 
 <img src="pics/001.gif" width="498" height="298" />
 
-It is written in C and GLSL and uses the SDL2 for windown managment
+It is written in C and GLSL and uses the SDL2 for window management
 and OpenGL 4 for running shaders (either for rendering, or for computing
 on the many cores of the GPU).
 
