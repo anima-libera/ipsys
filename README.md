@@ -8,7 +8,14 @@ randomly generated particule systems.
 
 <img src="pics/001.gif" width="498" height="298" />
 
+It is written in C and GLSL and uses the SDL2 for windown managment
+and OpenGL 4 for running shaders (either for rendering, or for computing
+on the many cores of the GPU).
+
 ## Build and run
+
+The current build system assumes being run on Linux, with Python3 and GCC
+available.
 
 ```sh
 python3 _comp.py -l
@@ -23,11 +30,11 @@ python3 _comp.py
 ## TODO
 
 - LINK STATICALLY WITH GLEW!
-- The `main.c` file should be way smaller that it currently is.
-- More UI components.
+- Add an history of rules to be able to return to previous rules.
+- The `main.c` file should be small, not big ><.
+- More UI components to tinker with the settings.
 - Text rendering for the UI.
-- Built-in console.
-- Text-based modular data representation format, then add save/load.
+- Built-in console for a cool interface.
+- Text-based modular data representation format, then add save/load features.
 - Make the build system usable with clang and on Windows.
-- View the fields.
-- Better README.
+- View the "force" fields.
