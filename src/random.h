@@ -11,7 +11,7 @@
 struct rg_t
 {
 	uint32_t seed; /* Will not be changed by using the generator. */
-	#define RG_SIZE 41 /* Arbitrary choise with no thoughts behind it. */
+	#define RG_SIZE 41 /* Arbitrary choice with no thoughts behind it. */
 	uint32_t lcg_array[RG_SIZE];
 	int cur; /* Index of the next LCG to be used. */
 };
