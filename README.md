@@ -6,7 +6,7 @@
 Ipsys is a piece of software that focuces on running and displaying cool
 randomly generated particule systems.
 
-![gif uwu](pics/001.gif)
+![gif uwu](pics/001.gif | width=498)
 
 ## Build and run
 
