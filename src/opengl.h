@@ -1,16 +1,18 @@
 
-#ifdef USE_GLEW
-#include <GL/glew.h>
-#else
 #ifndef IPSYS_HEADER_OPENGL__
 #define IPSYS_HEADER_OPENGL__
 
-#include <GL/glx.h>
-#include <GL/gl.h>
+#ifdef USE_GLEW
 
-#define GL_VERSION_4_3 1
-#define GL_GLEXT_PROTOTYPES
-#include <GL/glext.h>
+	#include <GL/glew.h>
+
+#else
+
+	#define GL_GLEXT_PROTOTYPES
+	#include <GL/gl.h>
+	#include <GL/glext.h>
+	#include <GL/glx.h>
+
+#endif
 
 #endif /* IPSYS_HEADER_OPENGL__ */
-#endif

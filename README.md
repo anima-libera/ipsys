@@ -8,11 +8,7 @@ randomly generated particule systems.
 
 <img src="pics/001.gif" width="498" height="298" />
 
-<<<<<<< HEAD
-It is written in C and GLSL and uses the SDL2 for window managment
-=======
 It is written in C and GLSL and uses the SDL2 for window management
->>>>>>> 77d8946168ff5c590193ef8a281a8f64344a02ca
 and OpenGL 4 for running shaders (either for rendering, or for computing
 on the many cores of the GPU).
 
@@ -22,13 +18,13 @@ The current build system assumes being run on Linux, with Python3 and GCC
 available.
 
 ```sh
-python3 _comp.py -l
+python3 _comp.py --use-glew -l
 ```
 
 ### Just build
 
 ```sh
-python3 _comp.py
+python3 _comp.py --use-glew
 ```
 
 ## TODO

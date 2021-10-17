@@ -279,12 +279,16 @@ int main(int argc, const char** argv)
 		error_sdl2_fail("SDL_GL_CreateContext");
 		return EXIT_FAILURE;
 	}
-	GLenum gnew_init_result = glewInit();
-	if (gnew_init_result != GLEW_OK)
-	{
-		fprintf(stderr, "GLEW error: glewInit failed: \"%s\"\n",
-			glewGetErrorString(gnew_init_result));
-	}
+	#if USE_GLEW
+		GLenum glew_init_result = glewInit();
+		if (glew_init_result != GLEW_OK)
+		{
+			fprintf(stderr, "GLEW error: glewInit failed: \"%s\"\n",
+				glewGetErrorString(glew_init_result));
+		}
+	#else
+		fprintf(stderr, "Not using GLEW\n");
+	#endif
 	glEnable(GL_MULTISAMPLE);
 	if (SDL_GL_SetSwapInterval(-1) != 0)
 	{
@@ -440,9 +444,9 @@ int main(int argc, const char** argv)
 	typedef void (*type_glViewport)(GLint x, GLint y, GLsizei width, GLsizei height);
 	type_glViewport test_glViewport;
 	#if USE_GLEW
-	test_glViewport = glViewport;
+		test_glViewport = glViewport;
 	#else
-	test_glViewport = (type_glViewport)glXGetProcAddress((const GLubyte*)"glViewport");
+		test_glViewport = (type_glViewport)glXGetProcAddress((const GLubyte*)"glViewport");
 	#endif
 
 	int running = 1;
