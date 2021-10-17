@@ -1,7 +1,7 @@
 
 #include "settings.h"
 #include "shaders.h"
-#include <GL/glew.h>
+#include "opengl.h"
 
 float g_setting_read_fade_factor = 0.0f;
 

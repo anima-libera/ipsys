@@ -7,7 +7,7 @@
 #ifndef IPSYS_HEADER_UNIVERSE__
 #define IPSYS_HEADER_UNIVERSE__
 
-#include <GL/glew.h>
+#include "opengl.h"
 
 /* Particle struct that holds all the data describing what is exclusive to a
  * single particle.

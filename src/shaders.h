@@ -5,7 +5,7 @@
 #ifndef IPSYS_HEADER_SHADERS__
 #define IPSYS_HEADER_SHADERS__
 
-#include <GL/glew.h>
+#include "opengl.h"
 
 /* These are OpenGL shader program ids that can be given to glUseProgram.
  * They are set to valid shader program id values by a call to shprog_build_all

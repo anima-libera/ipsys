@@ -9,6 +9,7 @@ Options:
   -h  --help        Prints this docstring.
   -l  --launch      Executes the bin if compiled, with what follows as args.
   -d  --debug       Standard debuging build, defines DEBUG, launches with -d.
+  --use-glew        Use the GLEW OpenGL extention loader.
   --opengl-notifications     Enables OpenGL notifications.
 
 Example usage for debug:
@@ -47,6 +48,7 @@ def cmdline_has_option(*option_names):
 	return False
 option_help = cmdline_has_option("-h", "--help")
 option_debug = cmdline_has_option("-d", "--debug")
+option_use_glew = cmdline_has_option("--use-glew")
 option_opengl_notifications = cmdline_has_option("--opengl-notifications")
 release_build = not option_debug
 src_dir_name = "src"
@@ -128,11 +130,14 @@ if release_build:
 	build_command_args.append("-O2")
 	build_command_args.append("-fno-stack-protector")
 	build_command_args.append("-flto")
+	build_command_args.append("-s")
 if option_opengl_notifications:
 	build_command_args.append("-DENABLE_OPENGL_NOTIFICATIONS")
 build_command_args.append("-lGL")
-build_command_args.append("-DGLEW_STATIC")
-build_command_args.append("-lGLEW")
+if option_use_glew:
+	build_command_args.append("-DGLEW_STATIC") # Doesn't seem to be enough ><
+	build_command_args.append("-lGLEW")
+	build_command_args.append("-DUSE_GLEW")
 build_command_args.append("`sdl2-config --cflags --libs`") # See the SDL2 doc
 build_command_args.append("-lm")
 build_command = " ".join(build_command_args)

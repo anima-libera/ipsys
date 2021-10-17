@@ -5,7 +5,7 @@
 #ifndef IPSYS_HEADER_SETTINGS__
 #define IPSYS_HEADER_SETTINGS__
 
-#include <GL/glew.h>
+#include "opengl.h"
 
 /* Read-only fade factor setting current value. */
 extern float g_setting_read_fade_factor;

@@ -8,7 +8,7 @@ randomly generated particule systems.
 
 <img src="pics/001.gif" width="498" height="298" />
 
-It is written in C and GLSL and uses the SDL2 for windown managment
+It is written in C and GLSL and uses the SDL2 for window managment
 and OpenGL 4 for running shaders (either for rendering, or for computing
 on the many cores of the GPU).
 
@@ -29,7 +29,7 @@ python3 _comp.py
 
 ## TODO
 
-- LINK STATICALLY WITH GLEW!
+- Link statically with GLEW or load OpenGL functions manually.
 - Add an history of rules to be able to return to previous rules.
 - The `main.c` file should be small, not big ><.
 - More UI components to tinker with the settings.

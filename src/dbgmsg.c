@@ -1,6 +1,6 @@
 
 #include "dbgmsg.h"
-#include <GL/glew.h>
+#include "opengl.h"
 #include <SDL2/SDL.h>
 
 /* Returns the name of the source parameter of the debug message callback. */

@@ -1,8 +1,8 @@
 
 #include "embedded.h"
+#include "opengl.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <GL/glew.h>
 
 /* Parameters akin to dbg_... can be NULL, but should actually provide
  * information that describes the shader type and/or shader source/sources
