@@ -9,6 +9,7 @@ Options:
   -h  --help        Prints this docstring.
   -l  --launch      Executes the bin if compiled, with what follows as args.
   -d  --debug       Standard debuging build, defines DEBUG, launches with -d.
+  --mac             Enables OpenGL notifications.
   --use-glew        Use the GLEW OpenGL extention loader.
   --opengl-notifications     Enables OpenGL notifications.
 
@@ -24,6 +25,12 @@ def print_blue(*args, **kwargs):
 	print("\x1b[36m", end = "")
 	print(*args, **kwargs)
 	print("\x1b[39m", end = "", flush = True)
+
+def print_error(error, *args, **kwargs):
+	print("\x1b[1m", end = "")
+	print(f"\x1b[31m{error} error:\x1b[39m ", end = "")
+	print(*args, **kwargs)
+	print("\x1b[22m", end = "", flush = True)
 
 # Launch option -l
 if "-l" in sys.argv[1:]:
@@ -43,22 +50,27 @@ else:
 # Options
 def cmdline_has_option(*option_names):
 	global options
-	for option_name in option_names:
-		if option_name in options:
-			options.remove(option_name)
-			if option_name in options:
-				print("\x1b[31mCmdline error:\x1b[39m " +
-					f"Argument option \"{option_name}\" found more than once.")
-			return True
-	return False
+	found = None
+	for option in options:
+		if option in option_names:
+			found = option
+			break
+	if found == None:
+		return False
+	options.remove(found)
+	for option in options:
+		if option in option_names:
+			print_error("Cmdline",
+				f"Argument option \"{option}\" is redundant.")
+			options.remove(option)
+	return True
 option_help = cmdline_has_option("-h", "--help")
 option_debug = cmdline_has_option("-d", "--debug")
+option_mac = cmdline_has_option("--mac")
 option_use_glew = cmdline_has_option("--use-glew")
 option_opengl_notifications = cmdline_has_option("--opengl-notifications")
 for unknown_option in options:
-	print("\x1b[31mCmdline error:\x1b[39m " +
-		f"Unknown argument option \"{unknown_option}\".")
-release_build = not option_debug
+	print_error("Cmdline", f"Unknown argument option \"{unknown_option}\".")
 src_dir_name = "src"
 bin_dir_name = "bin"
 bin_name = "ipsys"
@@ -83,7 +95,7 @@ def escaped_file_content(filepath):
 				ord("\""): "\\\"", ord("\\"): "\\\\",
 				ord("\n"): "\\n", ord("\t"): "\\t"})
 	except FileNotFoundError as error:
-		print("\x1b[31mEmbedded file error:\x1b[39m " +
+		print_error("Embedded file",
 			"The embedded content generator couldn't find the file " +
 			f"\"{filepath}\" used in an EMBEDDED macro in the " +
 			f"\"{embedded_header_file_name}\" header file.")
@@ -125,6 +137,8 @@ for src_file_name in src_file_names:
 build_command_args.append("-o")
 build_command_args.append(os.path.join(bin_dir_name, bin_name))
 build_command_args.append("-I" + src_dir_name)
+if option_mac:
+	build_command_args.append("-I$(brew --prefix sdl2)/include")
 build_command_args.append("-std=c11")
 build_command_args.append("-Wall")
 build_command_args.append("-Wextra")
@@ -134,22 +148,27 @@ build_command_args.append("-Wno-maybe-uninitialized")
 if option_debug:
 	build_command_args.append("-DDEBUG")
 	build_command_args.append("-g")
-if release_build:
+else:
 	build_command_args.append("-O2")
 	build_command_args.append("-fno-stack-protector")
 	build_command_args.append("-flto")
 	build_command_args.append("-s")
 if option_opengl_notifications:
 	build_command_args.append("-DENABLE_OPENGL_NOTIFICATIONS")
-build_command_args.append("-lGL")
+if option_mac:
+	build_command_args.append("-framework OpenGL")
+else:
+    build_command_args.append("-lGL")
 if option_use_glew:
 	build_command_args.append("-DGLEW_STATIC") # Doesn't seem to be enough ><
 	build_command_args.append("-lGLEW")
 	build_command_args.append("-DUSE_GLEW")
+	if option_mac:
+		build_command_args.append("-I$(brew --prefix glew)/include")
 build_command_args.append("`sdl2-config --cflags --libs`") # See the SDL2 doc
 build_command_args.append("-lm")
 build_command = " ".join(build_command_args)
-print(("RELEASE" if release_build else "DEBUG") + " BUILD")
+print(("DEBUG" if option_debug else "RELEASE") + " BUILD")
 print_blue(build_command)
 build_exit_status = os.system(build_command)
 
