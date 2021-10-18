@@ -708,6 +708,11 @@ int main(int argc, const char** argv)
 			glDisable(GL_BLEND);
 		}
 
+		#if 0
+		glClearColor(0, 0, 0, 255);
+		glClear(GL_COLOR_BUFFER_BIT);
+		#endif
+
 		/* Render the particles in the universe. */
 		{
 			#define ATTRIB_LOCATION_POS ((GLuint)0)

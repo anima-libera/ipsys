@@ -42,14 +42,22 @@ else:
 
 # Options
 def cmdline_has_option(*option_names):
+	global options
 	for option_name in option_names:
 		if option_name in options:
+			options.remove(option_name)
+			if option_name in options:
+				print("\x1b[31mCmdline error:\x1b[39m " +
+					f"Argument option \"{option_name}\" found more than once.")
 			return True
 	return False
 option_help = cmdline_has_option("-h", "--help")
 option_debug = cmdline_has_option("-d", "--debug")
 option_use_glew = cmdline_has_option("--use-glew")
 option_opengl_notifications = cmdline_has_option("--opengl-notifications")
+for unknown_option in options:
+	print("\x1b[31mCmdline error:\x1b[39m " +
+		f"Unknown argument option \"{unknown_option}\".")
 release_build = not option_debug
 src_dir_name = "src"
 bin_dir_name = "bin"

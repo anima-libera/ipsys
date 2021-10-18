@@ -18,14 +18,16 @@ The current build system assumes being run on Linux, with Python3 and GCC
 available.
 
 ```sh
-python3 _comp.py --use-glew -l
+python3 _comp.py -l
 ```
 
 ### Just build
 
 ```sh
-python3 _comp.py --use-glew
+python3 _comp.py
 ```
+
+The produced binary is in `bin`.
 
 ## TODO
 
