@@ -441,12 +441,14 @@ int main(int argc, const char** argv)
 	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(ui_vertex_t),
 		ui_bg_vertex_array, GL_STATIC_DRAW);
 
+	#if 0
 	typedef void (*type_glViewport)(GLint x, GLint y, GLsizei width, GLsizei height);
 	type_glViewport test_glViewport;
 	#if USE_GLEW
 		test_glViewport = glViewport;
 	#else
 		test_glViewport = (type_glViewport)glXGetProcAddress((const GLubyte*)"glViewport");
+	#endif
 	#endif
 
 	int running = 1;
@@ -651,7 +653,7 @@ int main(int argc, const char** argv)
 			#define ATTRIB_LOCATION_POS ((GLuint)0)
 			#define ATTRIB_LOCATION_COLOR ((GLuint)1)
 
-			test_glViewport(800, 0, 800, 800);
+			glViewport(800, 0, 800, 800);
 			glUseProgram(g_shprog_draw_ui_simple);
 			glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
 			glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
@@ -696,7 +698,7 @@ int main(int argc, const char** argv)
 
 		/* Render fade in the universe. */
 		{
-			test_glViewport(0, 0, 800, 800);
+			glViewport(0, 0, 800, 800);
 			glEnable(GL_BLEND);
 			glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
 			glBlendFunc(GL_ONE, GL_ONE);
@@ -713,7 +715,7 @@ int main(int argc, const char** argv)
 			#define ATTRIB_LOCATION_ANGLE ((GLuint)2)
 			#define ATTRIB_LOCATION_OLDPOS ((GLuint)3)
 
-			test_glViewport(0, 0, 800, 800);
+			glViewport(0, 0, 800, 800);
 			glUseProgram(g_shprog_draw_particles);
 			glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
 			glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
