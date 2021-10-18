@@ -409,6 +409,25 @@ int main(int argc, const char** argv)
 	glBufferData(GL_ARRAY_BUFFER, BAR_NUMBER * 4 * sizeof(ui_vertex_t),
 		ui_line_vertex_array, GL_STATIC_DRAW);
 
+	GLuint ui_line_vertex_index_array[BAR_NUMBER * 8];
+	for (unsigned int i = 0; i < BAR_NUMBER; i++)
+	{
+		ui_line_vertex_index_array[i * 8 + 0] = i * 4 + 0;
+		ui_line_vertex_index_array[i * 8 + 1] = i * 4 + 1;
+		ui_line_vertex_index_array[i * 8 + 2] = i * 4 + 1;
+		ui_line_vertex_index_array[i * 8 + 3] = i * 4 + 2;
+		ui_line_vertex_index_array[i * 8 + 4] = i * 4 + 2;
+		ui_line_vertex_index_array[i * 8 + 5] = i * 4 + 3;
+		ui_line_vertex_index_array[i * 8 + 6] = i * 4 + 3;
+		ui_line_vertex_index_array[i * 8 + 7] = i * 4 + 0;
+	}
+
+	GLuint buf_ui_line_index_id;
+	glGenBuffers(1, &buf_ui_line_index_id);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf_ui_line_index_id);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, BAR_NUMBER * 8 * sizeof(GLuint),
+		ui_line_vertex_index_array, GL_STATIC_DRAW);
+
 	ui_vertex_t ui_rect_vertex_array[BAR_NUMBER * 4];
 
 	float ui_rect_filled_x[BAR_NUMBER] = {
@@ -445,12 +464,12 @@ int main(int argc, const char** argv)
 	GLuint ui_rect_vertex_index_array[BAR_NUMBER * 6];
 	for (unsigned int i = 0; i < BAR_NUMBER; i++)
 	{
-		ui_rect_vertex_index_array[i * 6 + 0] = 4 * i + 0;
-		ui_rect_vertex_index_array[i * 6 + 1] = 4 * i + 1;
-		ui_rect_vertex_index_array[i * 6 + 2] = 4 * i + 2;
-		ui_rect_vertex_index_array[i * 6 + 3] = 4 * i + 1;
-		ui_rect_vertex_index_array[i * 6 + 4] = 4 * i + 2;
-		ui_rect_vertex_index_array[i * 6 + 5] = 4 * i + 3;
+		ui_rect_vertex_index_array[i * 6 + 0] = i * 4 + 0;
+		ui_rect_vertex_index_array[i * 6 + 1] = i * 4 + 1;
+		ui_rect_vertex_index_array[i * 6 + 2] = i * 4 + 2;
+		ui_rect_vertex_index_array[i * 6 + 3] = i * 4 + 1;
+		ui_rect_vertex_index_array[i * 6 + 4] = i * 4 + 2;
+		ui_rect_vertex_index_array[i * 6 + 5] = i * 4 + 3;
 	}
 
 	GLuint buf_ui_rect_index_id;
@@ -718,7 +737,7 @@ int main(int argc, const char** argv)
 			glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
 				GL_FALSE, sizeof(ui_vertex_t),
 				(void*)offsetof(ui_vertex_t, r));
-			//glDrawArrays(GL_TRIANGLES, 0, BAR_NUMBER * 4);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf_ui_rect_index_id);
 			glDrawElements(GL_TRIANGLES, 6 * BAR_NUMBER, GL_UNSIGNED_INT,
 				(void*)0);
 
@@ -730,7 +749,9 @@ int main(int argc, const char** argv)
 			glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
 				GL_FALSE, sizeof(ui_vertex_t),
 				(void*)offsetof(ui_vertex_t, r));
-			glDrawArrays(GL_LINE_LOOP, 0, BAR_NUMBER * 4);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf_ui_line_index_id);
+			glDrawElements(GL_LINES, 8 * BAR_NUMBER, GL_UNSIGNED_INT,
+				(void*)0);
 			
 			glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
 			glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
