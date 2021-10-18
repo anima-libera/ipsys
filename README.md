@@ -31,6 +31,7 @@ The produced binary is in `bin`.
 
 ## TODO
 
+- Button to totally restart the app.
 - Read a config file.
   - OpenGL version (disable some features if needed).
   - Support mesa drivers that seem to not support the current `GL_BLEND` use.
@@ -38,6 +39,7 @@ The produced binary is in `bin`.
 - Full screen setting.
 - Particle size setting.
 - Simulation speed setting.
+  - Instead of having n iterations per frame, it could be nice to have n sub-frames per frames (each sub-frame is painted on top of the rendering area).
 - Add an history of rules to be able to return to previous rules.
 - The `main.c` file should be small, not big ><.
 - More UI components to tinker with the settings.

@@ -82,6 +82,8 @@ layout(shared, binding = 4) buffer buffer_info
 	uint type_number;
 };
 
+layout(location = 0) uniform int u_update_position;
+
 float rand(vec2 v){
 	return fract(sin(dot(v.xy, vec2(12.9898, 78.233))) * 43758.5453);
 }
@@ -183,8 +185,11 @@ void main()
 		next[i].angle = atan(v.y, v.x);
 	}
 
-	next[i].oldx = curr[i].x;
-	next[i].oldy = curr[i].y;
+	if (u_update_position == 0)
+	{
+		next[i].oldx = curr[i].x;
+		next[i].oldy = curr[i].y;
+	}
 
 	#define T type_table[next[i].type]
 	next[i].r = T.br + next[i].speed * T.sr + next[i].pressure * T.pr;
