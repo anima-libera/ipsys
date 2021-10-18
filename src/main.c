@@ -441,16 +441,6 @@ int main(int argc, const char** argv)
 	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(ui_vertex_t),
 		ui_bg_vertex_array, GL_STATIC_DRAW);
 
-	#if 0
-	typedef void (*type_glViewport)(GLint x, GLint y, GLsizei width, GLsizei height);
-	type_glViewport test_glViewport;
-	#if USE_GLEW
-		test_glViewport = glViewport;
-	#else
-		test_glViewport = (type_glViewport)glXGetProcAddress((const GLubyte*)"glViewport");
-	#endif
-	#endif
-
 	int running = 1;
 	while (running)
 	{
@@ -708,9 +698,24 @@ int main(int argc, const char** argv)
 			glDisable(GL_BLEND);
 		}
 
+		/* Apparently, on machines equipped with mesa drivers,
+		 * the fading using GL_BLEND doesn't work (more precisely,
+		 * the color buffer is not affected by the previous block).
+		 * In that case, `glClear(GL_COLOR_BUFFER_BIT)` is a good
+		 * quick workaround. Setting the fade_factor setting to 0.0f
+		 * and using `glUseProgram(g_shprog_draw_fade)` without blending
+		 * also works and is a bit better. */
 		#if 0
 		glClearColor(0, 0, 0, 255);
 		glClear(GL_COLOR_BUFFER_BIT);
+		#endif
+		#if 0
+		{
+			glViewport(0, 0, 800, 800);
+			glUseProgram(g_shprog_draw_fade);
+			glDrawArrays(GL_POINTS, 0, 1);
+			glUseProgram((GLuint)0);
+		}
 		#endif
 
 		/* Render the particles in the universe. */

@@ -31,7 +31,13 @@ The produced binary is in `bin`.
 
 ## TODO
 
-- Link statically with GLEW or load OpenGL functions manually.
+- Read a config file.
+  - OpenGL version (disable some features if needed).
+  - Support mesa drivers that seem to not support the current `GL_BLEND` use.
+  - Set settings.
+- Full screen setting.
+- Particle size setting.
+- Simulation speed setting.
 - Add an history of rules to be able to return to previous rules.
 - The `main.c` file should be small, not big ><.
 - More UI components to tinker with the settings.
@@ -40,3 +46,4 @@ The produced binary is in `bin`.
 - Text-based modular data representation format, then add save/load features.
 - Make the build system usable with clang and on Windows.
 - View the "force" fields.
+- Display the rules.
