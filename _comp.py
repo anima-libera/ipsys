@@ -50,6 +50,7 @@ option_help = cmdline_has_option("-h", "--help")
 option_debug = cmdline_has_option("-d", "--debug")
 option_use_glew = cmdline_has_option("--use-glew")
 option_opengl_notifications = cmdline_has_option("--opengl-notifications")
+option_mac = cmdline_has_option("--mac")
 release_build = not option_debug
 src_dir_name = "src"
 bin_dir_name = "bin"
@@ -117,6 +118,8 @@ for src_file_name in src_file_names:
 build_command_args.append("-o")
 build_command_args.append(os.path.join(bin_dir_name, bin_name))
 build_command_args.append("-I" + src_dir_name)
+if option_mac:
+	build_command_args.append("-I$(brew --prefix sdl2)/include")
 build_command_args.append("-std=c11")
 build_command_args.append("-Wall")
 build_command_args.append("-Wextra")
@@ -133,11 +136,16 @@ if release_build:
 	build_command_args.append("-s")
 if option_opengl_notifications:
 	build_command_args.append("-DENABLE_OPENGL_NOTIFICATIONS")
-build_command_args.append("-lGL")
+if option_mac:
+	build_command_args.append("-framework OpenGL")
+else:
+    build_command_args.append("-lGL")
 if option_use_glew:
 	build_command_args.append("-DGLEW_STATIC") # Doesn't seem to be enough ><
 	build_command_args.append("-lGLEW")
 	build_command_args.append("-DUSE_GLEW")
+	if option_mac:
+		build_command_args.append("-I$(brew --prefix glew)/include")
 build_command_args.append("`sdl2-config --cflags --libs`") # See the SDL2 doc
 build_command_args.append("-lm")
 build_command = " ".join(build_command_args)
