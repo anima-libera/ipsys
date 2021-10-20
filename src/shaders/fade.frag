@@ -1,7 +1,7 @@
 
 #version 430 core
 layout(location = 0) uniform float u_fade_f;
-out vec4 out_color;
+layout(location = 0) out vec4 out_color;
 
 void main()
 {

@@ -1,7 +1,7 @@
 
 #version 430 core
 in vec3 g_color;
-out vec4 out_color;
+layout(location = 0) out vec4 out_color;
 
 void main()
 {

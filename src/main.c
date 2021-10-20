@@ -453,14 +453,14 @@ int main(int argc, const char** argv)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, univ_fbo_double_id[i]);
-		glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, univ_texture_double_id[i], 0);
-		if (glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		glBindFramebuffer(GL_FRAMEBUFFER, univ_fbo_double_id[i]);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, univ_texture_double_id[i], 0);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
 			assert(0);
 			/* TODO: Get a true error message. */
 		}
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	/* UI setup. */
@@ -867,6 +867,7 @@ int main(int argc, const char** argv)
 			#undef ATTRIB_LOCATION_COLOR
 		}
 
+		#if 0
 		/* Render fade in the universe. */
 		if (!no_fading)
 		{
@@ -885,6 +886,31 @@ int main(int argc, const char** argv)
 			glUseProgram(g_shprog_draw_fade);
 			glDrawArrays(GL_POINTS, 0, 1);
 			glUseProgram((GLuint)0);
+		}
+		#endif
+
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER,
+				univ_fbo_double_id[univ_rendering_index]);
+			glViewport(0, 0, 800, 800);
+
+			if (no_fading)
+			{
+				glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+				glClear(GL_COLOR_BUFFER_BIT);
+			}
+			else
+			{
+				glEnable(GL_BLEND);
+				glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
+				glBlendFunc(GL_ONE, GL_ONE);
+				glUseProgram(g_shprog_draw_fade);
+				glDrawArrays(GL_POINTS, 0, 1);
+				glUseProgram((GLuint)0);
+				glDisable(GL_BLEND);
+			}
+
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 
 		for (unsigned int i = 0; i < iteration_number_per_frame; i++)
@@ -906,12 +932,15 @@ int main(int argc, const char** argv)
 
 			/* Render the particles in the universe. */
 			{
+				glBindFramebuffer(GL_FRAMEBUFFER,
+					univ_fbo_double_id[univ_rendering_index]);
+				glViewport(0, 0, 800, 800);
+
 				#define ATTRIB_LOCATION_POS ((GLuint)0)
 				#define ATTRIB_LOCATION_COLOR ((GLuint)1)
 				#define ATTRIB_LOCATION_ANGLE ((GLuint)2)
 				#define ATTRIB_LOCATION_OLDPOS ((GLuint)3)
 
-				glViewport(0, 0, 800, 800);
 				glUseProgram(g_shprog_draw_particles);
 				glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
 				glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
@@ -940,7 +969,16 @@ int main(int argc, const char** argv)
 				#undef ATTRIB_LOCATION_COLOR
 				#undef ATTRIB_LOCATION_ANGLE
 				#undef ATTRIB_LOCATION_OLDPOS
+
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			}
+		}
+
+		{
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, univ_fbo_double_id[univ_rendering_index]);
+			glBlitFramebuffer(0, 0, 800, 800, 0, 0, 800, 800, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 		}
 
 		SDL_GL_SwapWindow(g_window);

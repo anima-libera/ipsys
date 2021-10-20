@@ -29,6 +29,11 @@ python3 _comp.py
 
 The produced binary is in `bin`.
 
+### Dependencies
+
+- [SDL2](https://www.libsdl.org/)
+- [GLEW](http://glew.sourceforge.net/) but only if building with `--use-glew`
+
 ## Controls
 
 - The first bar in the ui panel controls the intensity of fading.
