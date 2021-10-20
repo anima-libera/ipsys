@@ -12,6 +12,10 @@
 #include <string.h>
 #include <SDL2/SDL.h>
 
+#ifdef cplusplus__
+#error C compiler required
+#endif
+
 void randomize_colors(part_type_t* type_table, unsigned int type_number,
 	rg_t* rg)
 {
@@ -347,6 +351,7 @@ int main(int argc, const char** argv)
 			fprintf(stderr, "GLEW error: glewInit failed: \"%s\"\n",
 				glewGetErrorString(glew_init_result));
 		}
+		fprintf(stderr, "Using GLEW\n");
 	#else
 		fprintf(stderr, "Not using GLEW\n");
 	#endif
@@ -455,6 +460,8 @@ int main(int argc, const char** argv)
 
 		glBindFramebuffer(GL_FRAMEBUFFER, univ_fbo_double_id[i]);
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, univ_texture_double_id[i], 0);
+		const GLenum draw_buffer_array[] = {GL_COLOR_ATTACHMENT0};
+		glDrawBuffers(1, draw_buffer_array);
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
 			assert(0);
@@ -729,6 +736,7 @@ int main(int argc, const char** argv)
 
 						case SDLK_w:
 							no_fading = !no_fading;
+							#if 0
 							if (no_fading)
 							{
 								setting_set_fade_factor(0.0f);
@@ -754,6 +762,7 @@ int main(int argc, const char** argv)
 									BAR_NUMBER * 4 * sizeof(ui_vertex_t),
 									ui_rect_vertex_array, GL_STATIC_DRAW);
 							}
+							#endif
 						break;
 
 						case SDLK_c:
@@ -889,6 +898,7 @@ int main(int argc, const char** argv)
 		}
 		#endif
 
+		#if 0
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER,
 				univ_fbo_double_id[univ_rendering_index]);
@@ -911,6 +921,32 @@ int main(int argc, const char** argv)
 			}
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+		#endif
+
+		if (no_fading)
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER,
+				univ_fbo_double_id[univ_rendering_index]);
+			//glViewport(0, 0, 800, 800);
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+		else
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER,
+				univ_fbo_double_id[univ_rendering_index]);
+			glViewport(0, 0, 800, 800);
+
+			glActiveTexture(GL_TEXTURE0 + 0);
+			glBindTexture(GL_TEXTURE_2D, univ_texture_double_id[1-univ_rendering_index]);
+			glProgramUniform1i(g_shprog_draw_texture_fade, 1, 0);
+			glUseProgram(g_shprog_draw_texture_fade);
+			
+			glDrawArrays(GL_POINTS, 0, 1);
+
+			glUseProgram((GLuint)0);
 		}
 
 		for (unsigned int i = 0; i < iteration_number_per_frame; i++)
@@ -980,6 +1016,8 @@ int main(int argc, const char** argv)
 			glBlitFramebuffer(0, 0, 800, 800, 0, 0, 800, 800, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 		}
+
+		univ_rendering_index = 1 - univ_rendering_index;
 
 		SDL_GL_SwapWindow(g_window);
 	}

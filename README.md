@@ -21,6 +21,8 @@ available.
 python3 _comp.py -l
 ```
 
+Any argument that comes after the `-l` is instead given to the binary.
+
 ### Just build
 
 ```sh
@@ -35,6 +37,10 @@ The produced binary is in `bin`.
 - [GLEW](http://glew.sourceforge.net/) but only if building with `--use-glew`
 
 ## Controls
+
+The ipsys binary can take one command line argument which would then be the number of particle types.
+
+At runtime, the ways to interact with the simulation and rendering are listed here:
 
 - The first bar in the ui panel controls the intensity of fading.
 - The second bar in the ui panel controls the number of physical iterations performed between each frames.
@@ -51,12 +57,9 @@ The produced binary is in `bin`.
 
 - Read a config file.
   - OpenGL version (disable some features if needed).
-  - Support mesa drivers that seem to not support the current `GL_BLEND` use.
   - Set settings.
 - Full screen setting.
 - Particle size setting.
-- Simulation speed setting.
-  - Instead of having n iterations per frame, it could be nice to have n sub-frames per frames (each sub-frame is painted on top of the rendering area).
 - Add an history of rules to be able to return to previous rules.
 - The `main.c` file should be small, not big ><.
 - More UI components to tinker with the settings.
@@ -66,3 +69,5 @@ The produced binary is in `bin`.
 - Make the build system usable with clang and on Windows.
 - View the "force" fields.
 - Display the rules.
+- Better type changing rules and rule generation.
+- Fix memory leaks.

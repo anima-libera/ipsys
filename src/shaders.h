@@ -10,9 +10,10 @@
 /* These are OpenGL shader program ids that can be given to glUseProgram.
  * They are set to valid shader program id values by a call to shprog_build_all
  * and unset by a call to shprog_destroy_all. */
-extern GLuint g_shprog_draw_fade;
-extern GLuint g_shprog_draw_ui_simple;
 extern GLuint g_shprog_draw_particles;
+extern GLuint g_shprog_draw_ui_simple;
+extern GLuint g_shprog_draw_fade;
+extern GLuint g_shprog_draw_texture_fade;
 extern GLuint g_shprog_comp_iteruniv;
 
 /* Builds all the shader programs.
