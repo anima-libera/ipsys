@@ -7,6 +7,7 @@
 #include "settings.h"
 #include "opengl.h"
 #include <math.h>
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <SDL2/SDL.h>
@@ -432,6 +433,36 @@ int main(int argc, const char** argv)
 	#define MAX_ITER_PER_FRAME 16
 	unsigned int iteration_number_per_frame = 4;
 
+	/* Universe rendering setup. */
+
+	int no_fading = 0;
+
+	unsigned int univ_rendering_index = 0;
+	GLuint univ_texture_double_id[2];
+	glGenTextures(2, univ_texture_double_id);
+	GLuint univ_fbo_double_id[2];
+	glGenFramebuffers(2, univ_fbo_double_id);
+
+	for (unsigned int i = 0; i < 2; i++)
+	{
+		glBindTexture(GL_TEXTURE_2D, univ_texture_double_id[i]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 800, 800, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, univ_fbo_double_id[i]);
+		glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, univ_texture_double_id[i], 0);
+		if (glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			assert(0);
+			/* TODO: Get a true error message. */
+		}
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	}
+
 	/* UI setup. */
 
 	const float ui_margin = 6.5f;
@@ -696,6 +727,35 @@ int main(int argc, const char** argv)
 							restart = 1;
 						break;
 
+						case SDLK_w:
+							no_fading = !no_fading;
+							if (no_fading)
+							{
+								setting_set_fade_factor(0.0f);
+
+								ui_rect_filled_x[0] =
+									ui_length *
+									(1.0f - g_setting_read_fade_factor /
+										SETTING_FADE_FACTOR_MAX);
+
+								unsigned int i = 0;
+								float ui_setup_y = 800.0f - (float)i * (2.0f * ui_margin + ui_size);
+								ui_rect_vertex_array[i * 4 + 0].x = 800.0f - ui_margin - ui_rect_filled_x[i];
+								ui_rect_vertex_array[i * 4 + 1].x = ui_margin;
+								ui_rect_vertex_array[i * 4 + 2].x = 800.0f - ui_margin - ui_rect_filled_x[i];
+								ui_rect_vertex_array[i * 4 + 3].x = ui_margin;
+								ui_rect_vertex_array[i * 4 + 0].y = ui_setup_y - ui_margin;
+								ui_rect_vertex_array[i * 4 + 1].y = ui_setup_y - ui_margin;
+								ui_rect_vertex_array[i * 4 + 2].y = ui_setup_y - ui_margin - ui_size;
+								ui_rect_vertex_array[i * 4 + 3].y = ui_setup_y - ui_margin - ui_size;
+
+								glBindBuffer(GL_ARRAY_BUFFER, buf_ui_rect_id);
+								glBufferData(GL_ARRAY_BUFFER,
+									BAR_NUMBER * 4 * sizeof(ui_vertex_t),
+									ui_rect_vertex_array, GL_STATIC_DRAW);
+							}
+						break;
+
 						case SDLK_c:
 							randomize_colors(type_table, tn, &rg);
 							glBindBuffer(GL_ARRAY_BUFFER, buf_type_id);
@@ -808,6 +868,7 @@ int main(int argc, const char** argv)
 		}
 
 		/* Render fade in the universe. */
+		if (!no_fading)
 		{
 			glViewport(0, 0, 800, 800);
 			glEnable(GL_BLEND);
@@ -818,25 +879,13 @@ int main(int argc, const char** argv)
 			glUseProgram((GLuint)0);
 			glDisable(GL_BLEND);
 		}
-		/* Apparently, on machines equipped with mesa drivers,
-		 * the fading using GL_BLEND doesn't work (more precisely,
-		 * the color buffer is not affected by the previous block).
-		 * In that case, `glClear(GL_COLOR_BUFFER_BIT)` is a good
-		 * quick workaround. Setting the fade_factor setting to 0.0f
-		 * and using `glUseProgram(g_shprog_draw_fade)` without blending
-		 * also works and is a bit better. */
-		#if 0
-		glClearColor(0, 0, 0, 255);
-		glClear(GL_COLOR_BUFFER_BIT);
-		#endif
-		#if 0
+		else
 		{
 			glViewport(0, 0, 800, 800);
 			glUseProgram(g_shprog_draw_fade);
 			glDrawArrays(GL_POINTS, 0, 1);
 			glUseProgram((GLuint)0);
 		}
-		#endif
 
 		for (unsigned int i = 0; i < iteration_number_per_frame; i++)
 		{
@@ -905,6 +954,7 @@ int main(int argc, const char** argv)
 
 	if (restart)
 	{
+		printf("Restarting\n");
 		goto l_beginning;
 	}
 	return 0;

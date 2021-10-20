@@ -40,6 +40,7 @@ The produced binary is in `bin`.
 - The C key randomizes the particle types colors.
 - The P key randomizes the particle positions.
 - The escape key terminates execution (same as closing the window).
+- The W key toggles fading (temporary fix for issue #3).
 
 ## TODO
 
