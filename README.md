@@ -29,9 +29,20 @@ python3 _comp.py
 
 The produced binary is in `bin`.
 
+## Controls
+
+- The first bar in the ui panel controls the intensity of fading.
+- The second bar in the ui panel controls the number of physical iterations performed between each frames.
+- Left click repels particles.
+- Right click attracts particles.
+- The R key randomizes the interaction rules.
+- The F key slightly and randomly mutates the interaction rules.
+- The C key randomizes the particle types colors.
+- The P key randomizes the particle positions.
+- The escape key terminates execution (same as closing the window).
+
 ## TODO
 
-- Button to totally restart the app.
 - Read a config file.
   - OpenGL version (disable some features if needed).
   - Support mesa drivers that seem to not support the current `GL_BLEND` use.

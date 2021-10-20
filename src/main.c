@@ -208,7 +208,7 @@ void mutate_pils(pil_set_t* pil_set_table, unsigned int type_number, rg_t* rg)
 		{
 			#define MUTATE(x_, f_, v_) x_ += rg_float(rg, \
 				-f_ * (x_ > 0.0f ? v_ : 1.0f), \
-				+f_ * (x_ < 0.0f ? v_ : 1.0f))
+				+f_ * (x_ < 0.0f ? v_ : 1.0f)) / ((float)(s+60) / 60.0f)
 
 			MUTATE(pil_set->attraction.steps[s].offset, 0.000001f, 1.1f);
 			MUTATE(pil_set->attraction.steps[s].slope, 0.000001f, 1.1f);
@@ -234,7 +234,67 @@ SDL_GLContext g_opengl_context = NULL;
 
 int main(int argc, const char** argv)
 {
-	(void)argc; (void)argv;
+	l_beginning:;
+
+	/* Parse command line arguments. */
+
+	const char* arg_type_number = NULL;
+
+	for (unsigned int i = 1; i < (unsigned int)argc; i++)
+	{
+		if (strcmp(argv[i], "-d") == 0)
+		{
+			;
+		}
+		else if (arg_type_number == NULL)
+		{
+			arg_type_number = argv[i];
+		}
+		else
+		{
+			fprintf(stderr, "The command line parser is overwhelmed! "
+				"It is still young..\n");
+			break;
+		}
+	}
+
+	int type_number = -1;
+	if (arg_type_number != NULL)
+	{
+		unsigned int i;
+		for (i = 0; arg_type_number[i] != '\0'; i++)
+		{
+			char c = arg_type_number[i];
+			if (c < '0' || '9' < c)
+			{
+				fprintf(stderr, "The type number command line argument "
+					"contains non-decimal-digit characters.\n");
+				goto l_after_type_number;
+			}
+		}
+		if (i == 0)
+		{
+			fprintf(stderr, "The type number command line argument "
+				"is empty.\n");
+			goto l_after_type_number;
+		}
+		type_number = 0;
+		for (i = 0; arg_type_number[i] != '\0'; i++)
+		{
+			type_number = type_number * 10 + (arg_type_number[i] - '0');
+		}
+		if (type_number == 0)
+		{
+			fprintf(stderr, "The type number command line argument "
+				"is zero.\n");
+			type_number = -1;
+			goto l_after_type_number;
+		}
+		printf("type number is %d\n", type_number);
+	}
+	l_after_type_number:
+
+	/* Initialize SDL2 and OpenGL. */
 
 	/* Initialize the SDL2 library and the GLEW OpenGL extension loader.
 	 * Create the unique global window g_window and the unique global OpenGL
@@ -312,7 +372,10 @@ int main(int argc, const char** argv)
 	rg_time_seed(&rg);
 
 	universe_info_t info = {0};
-	unsigned int tn = rg_int(&rg, 0, 3) != 0 ? 2 : rg_int(&rg, 1, 4);
+	unsigned int tn =
+		type_number >= 1 ? type_number :
+		rg_int(&rg, 0, 3) != 0 ? 2 :
+		rg_int(&rg, 1, 4);
 	unsigned int tnu = tn;
 	info.type_number = tn;
 
@@ -366,7 +429,8 @@ int main(int argc, const char** argv)
 
 	setting_set_fade_factor(0.05f);
 
-	unsigned int iteration_number_per_frame = 1;
+	#define MAX_ITER_PER_FRAME 16
+	unsigned int iteration_number_per_frame = 4;
 
 	/* UI setup. */
 
@@ -431,8 +495,8 @@ int main(int argc, const char** argv)
 	ui_vertex_t ui_rect_vertex_array[BAR_NUMBER * 4];
 
 	float ui_rect_filled_x[BAR_NUMBER] = {
-		ui_length * g_setting_read_fade_factor / SETTING_FADE_FACTOR_MAX,
-		800.0f - ui_margin, /* What ? Why ? */
+		ui_length * (1.0f - g_setting_read_fade_factor / SETTING_FADE_FACTOR_MAX),
+		ui_length * (1.0f - ((float)iteration_number_per_frame - 1.0f) / ((float)(MAX_ITER_PER_FRAME) - 1.0f)),
 	};
 
 	for (unsigned int i = 0; i < BAR_NUMBER; i++)
@@ -501,6 +565,7 @@ int main(int argc, const char** argv)
 	/* Core loop. */
 
 	int running = 1;
+	int restart = 0;
 	while (running)
 	{
 		SDL_Event event;
@@ -541,19 +606,13 @@ int main(int argc, const char** argv)
 								}
 								else if (i == 1)
 								{
-									#define MAX_ITER_PER_FRAME 16
-									#define MAX_ITER_PER_FRAME_AUX ((float)(MAX_ITER_PER_FRAME) - 1.0f)
 									const unsigned int value =
-										roundf((x - ui_margin) / ui_length * MAX_ITER_PER_FRAME_AUX + 1.0f);
+										roundf((x - ui_margin) / ui_length * ((float)(MAX_ITER_PER_FRAME) - 1.0f) + 1.0f);
 									iteration_number_per_frame = value;
 								
-									printf("set to %u iterations per frame\n", value);
-
 									ui_rect_filled_x[1] =
 										ui_length *
-										(1.0f - ((float)iteration_number_per_frame - 1.0f) / MAX_ITER_PER_FRAME_AUX);
-									#undef MAX_ITER_PER_FRAME_AUX
-									#undef MAX_ITER_PER_FRAME
+										(1.0f - ((float)iteration_number_per_frame - 1.0f) / ((float)(MAX_ITER_PER_FRAME) - 1.0f));
 								}
 
 								ui_rect_vertex_array[i * 4 + 0].x = 800.0f - ui_margin - ui_rect_filled_x[i];
@@ -632,6 +691,11 @@ int main(int argc, const char** argv)
 							running = 0;
 						break;
 
+						case SDLK_q:
+							running = 0;
+							restart = 1;
+						break;
+
 						case SDLK_c:
 							randomize_colors(type_table, tn, &rg);
 							glBindBuffer(GL_ARRAY_BUFFER, buf_type_id);
@@ -689,24 +753,6 @@ int main(int argc, const char** argv)
 					}
 				break;
 			}
-		}
-
-		for (unsigned int i = 0; i < iteration_number_per_frame; i++)
-		{
-			glProgramUniform1i(g_shprog_comp_iteruniv, 0, i != 0);
-			glUseProgram(g_shprog_comp_iteruniv);
-			
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, buf_part_curr_id);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buf_part_next_id);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, buf_type_id);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, buf_pil_set_id);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, buf_info_id);
-
-			glDispatchCompute(PARTICLE_NUMBER / WORK_GROUP_SIZE, 1, 1);
-			glUseProgram((GLuint)0);
-			glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
-
-			SWAP(GLuint, buf_part_curr_id, buf_part_next_id);
 		}
 
 		/* Render the UI. */
@@ -772,7 +818,6 @@ int main(int argc, const char** argv)
 			glUseProgram((GLuint)0);
 			glDisable(GL_BLEND);
 		}
-
 		/* Apparently, on machines equipped with mesa drivers,
 		 * the fading using GL_BLEND doesn't work (more precisely,
 		 * the color buffer is not affected by the previous block).
@@ -793,42 +838,60 @@ int main(int argc, const char** argv)
 		}
 		#endif
 
-		/* Render the particles in the universe. */
+		for (unsigned int i = 0; i < iteration_number_per_frame; i++)
 		{
-			#define ATTRIB_LOCATION_POS ((GLuint)0)
-			#define ATTRIB_LOCATION_COLOR ((GLuint)1)
-			#define ATTRIB_LOCATION_ANGLE ((GLuint)2)
-			#define ATTRIB_LOCATION_OLDPOS ((GLuint)3)
-
-			glViewport(0, 0, 800, 800);
-			glUseProgram(g_shprog_draw_particles);
-			glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
-			glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
-			glEnableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
-			glEnableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
+			glProgramUniform1i(g_shprog_comp_iteruniv, 0, 1);
+			glUseProgram(g_shprog_comp_iteruniv);
 			
-			glBindBuffer(GL_ARRAY_BUFFER, buf_part_curr_id);
-			glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
-				GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, x));
-			glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
-				GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, r));
-			glVertexAttribPointer(ATTRIB_LOCATION_ANGLE, 1, GL_FLOAT,
-				GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, angle));
-			glVertexAttribPointer(ATTRIB_LOCATION_OLDPOS, 2, GL_FLOAT,
-				GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, oldx));
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, buf_part_curr_id);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buf_part_next_id);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, buf_type_id);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, buf_pil_set_id);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, buf_info_id);
 
-			glDrawArrays(GL_POINTS, 0, PARTICLE_NUMBER);
-			
-			glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
-			glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
-			glDisableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
-			glDisableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
+			glDispatchCompute(PARTICLE_NUMBER / WORK_GROUP_SIZE, 1, 1);
 			glUseProgram((GLuint)0);
+			glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
 
-			#undef ATTRIB_LOCATION_POS
-			#undef ATTRIB_LOCATION_COLOR
-			#undef ATTRIB_LOCATION_ANGLE
-			#undef ATTRIB_LOCATION_OLDPOS
+			SWAP(GLuint, buf_part_curr_id, buf_part_next_id);
+
+			/* Render the particles in the universe. */
+			{
+				#define ATTRIB_LOCATION_POS ((GLuint)0)
+				#define ATTRIB_LOCATION_COLOR ((GLuint)1)
+				#define ATTRIB_LOCATION_ANGLE ((GLuint)2)
+				#define ATTRIB_LOCATION_OLDPOS ((GLuint)3)
+
+				glViewport(0, 0, 800, 800);
+				glUseProgram(g_shprog_draw_particles);
+				glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
+				glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+				glEnableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
+				glEnableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
+				
+				glBindBuffer(GL_ARRAY_BUFFER, buf_part_curr_id);
+				glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
+					GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, x));
+				glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
+					GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, r));
+				glVertexAttribPointer(ATTRIB_LOCATION_ANGLE, 1, GL_FLOAT,
+					GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, angle));
+				glVertexAttribPointer(ATTRIB_LOCATION_OLDPOS, 2, GL_FLOAT,
+					GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, oldx));
+
+				glDrawArrays(GL_POINTS, 0, PARTICLE_NUMBER);
+				
+				glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
+				glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+				glDisableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
+				glDisableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
+				glUseProgram((GLuint)0);
+
+				#undef ATTRIB_LOCATION_POS
+				#undef ATTRIB_LOCATION_COLOR
+				#undef ATTRIB_LOCATION_ANGLE
+				#undef ATTRIB_LOCATION_OLDPOS
+			}
 		}
 
 		SDL_GL_SwapWindow(g_window);
@@ -839,5 +902,10 @@ int main(int argc, const char** argv)
 	SDL_DestroyWindow(g_window);
 	g_window = NULL;
 	SDL_Quit();
+
+	if (restart)
+	{
+		goto l_beginning;
+	}
 	return 0;
 }

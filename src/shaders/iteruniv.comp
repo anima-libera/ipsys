@@ -185,7 +185,7 @@ void main()
 		next[i].angle = atan(v.y, v.x);
 	}
 
-	if (u_update_position == 0)
+	if (u_update_position != 0)
 	{
 		next[i].oldx = curr[i].x;
 		next[i].oldy = curr[i].y;
