@@ -440,6 +440,8 @@ int main(int argc, const char** argv)
 
 	/* Universe rendering setup. */
 
+	int render_each_iteration = 1;
+
 	int no_fading = 0;
 
 	unsigned int univ_rendering_index = 0;
@@ -765,6 +767,10 @@ int main(int argc, const char** argv)
 							#endif
 						break;
 
+						case SDLK_t:
+							render_each_iteration = !render_each_iteration;
+						break;
+
 						case SDLK_c:
 							randomize_colors(type_table, tn, &rg);
 							glBindBuffer(GL_ARRAY_BUFFER, buf_type_id);
@@ -951,7 +957,14 @@ int main(int argc, const char** argv)
 
 		for (unsigned int i = 0; i < iteration_number_per_frame; i++)
 		{
-			glProgramUniform1i(g_shprog_comp_iteruniv, 0, 1);
+			if (render_each_iteration)
+			{
+				glProgramUniform1i(g_shprog_comp_iteruniv, 0, 1);
+			}
+			else
+			{
+				glProgramUniform1i(g_shprog_comp_iteruniv, 0, i == 0);
+			}
 			glUseProgram(g_shprog_comp_iteruniv);
 			
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, buf_part_curr_id);
@@ -967,6 +980,7 @@ int main(int argc, const char** argv)
 			SWAP(GLuint, buf_part_curr_id, buf_part_next_id);
 
 			/* Render the particles in the universe. */
+			if (render_each_iteration || i == iteration_number_per_frame-1)
 			{
 				glBindFramebuffer(GL_FRAMEBUFFER,
 					univ_fbo_double_id[univ_rendering_index]);
