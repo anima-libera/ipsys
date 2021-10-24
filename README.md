@@ -21,15 +21,7 @@ available.
 python3 _comp.py -l
 ```
 
-Any argument that comes after the `-l` is instead given to the binary.
-
-### Just build
-
-```sh
-python3 _comp.py
-```
-
-The produced binary is in `bin`.
+The `-l` option means that if compilation succeeds, the binary is then executed. Any argument that comes after the `-l` is instead given to the binary.
 
 ### Dependencies
 
@@ -92,3 +84,24 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 - Better rule set mutation.
   - Add a slider (or multiple sliders) that, in a continuous manner, changes some parameter that in turns changes some rules.
   - For example, the curve describing the attraction rule between some pair of particle types gets added the values of a curve that is null everywere except in an interval where its value and edges are continuous functions of a slider.
+- Built-in video/gif recorder.
+- Website/server to upload/download shared rules, configs and scripts.
+- Put some features in separated libraries with some clean APIs.
+  - And maybe make binding to C++/Python/Rust/whatever.
+- Music visualization mode.
+  - Having the beat/melodies of a music influence the particles/colors/rules.
+- Accept shaders from outside, provided by the user.
+- Make it possible to have some dynamic library be used in place of scripts (to make it faster or to allow to call some neat C functions directly or something).
+- Multiple particle redering shaders (square, circle, something else).
+- Bloom effect.
+- Background cool color effects maybe.
+- Optimize even more.
+- Support for MacOS/Windows.
+- Run in web browser (compile to wasm, use WebGL, etc.).
+- Better build system command line interface.
+- Better command line interface in general.
+- Make a cooler gif or even a video to promote the project.
+- Make adding a shader easier (with even more code generation).
+- Add debugging features like function calls tracing, verbose option, etc.
+- Precomile the shaders to SPIR-V or something.
+- Expand the TODO list, it is not long enough xd.
