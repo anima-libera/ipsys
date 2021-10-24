@@ -27,6 +27,8 @@ EMBEDDED("shaders/fade.frag") const char* g_fade_frag;
 EMBEDDED("shaders/texture_fade.vert") const char* g_texture_fade_vert;
 EMBEDDED("shaders/texture_fade.geom") const char* g_texture_fade_geom;
 EMBEDDED("shaders/texture_fade.frag") const char* g_texture_fade_frag;
+EMBEDDED("shaders/texture_fade_2.vert") const char* g_texture_fade_2_vert;
+EMBEDDED("shaders/texture_fade_2.frag") const char* g_texture_fade_2_frag;
 EMBEDDED("shaders/iteruniv.comp") const char* g_iteruniv_comp;
 
 #endif /* IPSYS_HEADER_EMBEDDED__ */

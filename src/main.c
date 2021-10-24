@@ -234,6 +234,12 @@ struct __attribute__((packed)) ui_vertex_t
 };
 typedef struct ui_vertex_t ui_vertex_t;
 
+struct __attribute__((packed)) just_vertex_t
+{
+	GLfloat x, y;
+};
+typedef struct just_vertex_t just_vertex_t;
+
 SDL_Window* g_window = NULL;
 SDL_GLContext g_opengl_context = NULL;
 
@@ -471,6 +477,19 @@ int main(int argc, const char** argv)
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+
+	just_vertex_t univ_full_rect_array[4] = {
+		{.x = +1.0f, .y = +1.0f},
+		{.x = -1.0f, .y = +1.0f},
+		{.x = +1.0f, .y = -1.0f},
+		{.x = -1.0f, .y = -1.0f},
+	};
+
+	GLuint buf_univ_full_rect_id;
+	glGenBuffers(1, &buf_univ_full_rect_id);
+	glBindBuffer(GL_ARRAY_BUFFER, buf_univ_full_rect_id);
+	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(just_vertex_t),
+		univ_full_rect_array, GL_STATIC_DRAW);
 
 	/* UI setup. */
 
@@ -947,12 +966,31 @@ int main(int argc, const char** argv)
 
 			glActiveTexture(GL_TEXTURE0 + 0);
 			glBindTexture(GL_TEXTURE_2D, univ_texture_double_id[1-univ_rendering_index]);
+			
+			#if 0
 			glProgramUniform1i(g_shprog_draw_texture_fade, 1, 0);
 			glUseProgram(g_shprog_draw_texture_fade);
-			
 			glDrawArrays(GL_POINTS, 0, 1);
+			#endif
+
+			#define ATTRIB_LOCATION_POS 0
+
+			glUseProgram(g_shprog_draw_texture_fade_2);
+			glProgramUniform1f(g_shprog_draw_texture_fade_2, 0, g_setting_read_fade_factor);
+			glProgramUniform1i(g_shprog_draw_texture_fade_2, 1, 0);
+
+			glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
+			
+			glBindBuffer(GL_ARRAY_BUFFER, buf_univ_full_rect_id);
+			glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
+				GL_FALSE, sizeof(just_vertex_t),
+				(void*)offsetof(just_vertex_t, x));
+			
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 			glUseProgram((GLuint)0);
+
+			#undef ATTRIB_LOCATION_POS
 		}
 
 		for (unsigned int i = 0; i < iteration_number_per_frame; i++)
