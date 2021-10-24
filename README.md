@@ -67,6 +67,11 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 - More UI components to tinker with the settings.
 - Text rendering for the UI.
 - Built-in console for a cool interface.
+- Configurable interface and srcripting.
+  - Script the action of the cursor on particles with a custom scripting language.
+  - Script the action of user-created UI witgets on the rules, rule generators, patricles, colors, etc.
+  - Create UI witgets with scripting.
+  - A console line can be a witget.
 - Text-based modular data representation format, then add save/load features.
   - Config, setting set, color theme, rules, rule generators, particle positions, all of that in different blocks.
   - Each rule should be independant from the others, and optional.
