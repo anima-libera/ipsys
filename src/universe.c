@@ -93,7 +93,7 @@ void randomize_pils(pil_set_t* pil_set_table, unsigned int type_number,
 			rg_float(rg, -0.0010f, 0.0010f) :
 			rg_float(rg, 0.0003f, 0.0005f);
 		pil_set->attraction.steps[0].slope = 0.0f;
-		for (int s = 1; s < PISL_STEP_NUMBER; ++s)
+		for (int s = 1; s < PIL_STEP_NUMBER; ++s)
 		{
 			if (rg_int(rg, 0, continuous) == 0)
 			{
@@ -123,7 +123,7 @@ void randomize_pils(pil_set_t* pil_set_table, unsigned int type_number,
 		/* angle */
 		pil_set->angle.steps[0].offset = 0.0f;
 		pil_set->angle.steps[0].slope = 0.0f;
-		for (int s = 1; s < PISL_STEP_NUMBER; ++s)
+		for (int s = 1; s < PIL_STEP_NUMBER; ++s)
 		{
 			if (rg_int(rg, 0, continuous) == 0)
 			{
@@ -155,7 +155,7 @@ void randomize_pils(pil_set_t* pil_set_table, unsigned int type_number,
 			rg_float(rg, -0.0010f, 0.0010f) : 
 			0.0f;
 		pil_set->speed.steps[0].slope = 0.0f;
-		for (int s = 1; s < PISL_STEP_NUMBER; ++s)
+		for (int s = 1; s < PIL_STEP_NUMBER; ++s)
 		{
 			if (rg_int(rg, 0, continuous) == 0)
 			{
@@ -192,7 +192,7 @@ void mutate_pils(pil_set_t* pil_set_table, unsigned int type_number,
 	{
 		pil_set_t* pil_set = &pil_set_table[i * type_number + j];
 
-		for (int s = 0; s < PISL_STEP_NUMBER; ++s)
+		for (int s = 0; s < PIL_STEP_NUMBER; ++s)
 		{
 			#define MUTATE(x_, f_, v_) x_ += rg_float(rg, \
 				-f_ * (x_ > 0.0f ? v_ : 1.0f), \

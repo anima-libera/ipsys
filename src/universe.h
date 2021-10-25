@@ -48,7 +48,7 @@ struct __attribute__((packed)) part_type_t
 };
 typedef struct part_type_t part_type_t;
 
-#define PISL_STEP_NUMBER 90
+#define PIL_STEP_NUMBER 90
 struct __attribute__((packed)) pil_step_t
 {
 	GLfloat offset;
@@ -57,7 +57,7 @@ struct __attribute__((packed)) pil_step_t
 typedef struct pil_step_t pil_step_t;
 struct __attribute__((packed)) pil_t
 {
-	pil_step_t steps[PISL_STEP_NUMBER];
+	pil_step_t steps[PIL_STEP_NUMBER];
 };
 typedef struct pil_t pil_t;
 struct __attribute__((packed)) pil_set_t
@@ -70,7 +70,11 @@ typedef struct pil_set_t pil_set_t;
 
 struct __attribute__((packed)) universe_info_t
 {
+	GLuint part_number;
 	GLuint type_number;
+	GLuint change_type_law_number;
+	GLuint pil_step_number;
+	GLfloat pil_step_dist;
 };
 typedef struct universe_info_t universe_info_t;
 

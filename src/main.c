@@ -5,6 +5,7 @@
 #include "shaders.h"
 #include "universe.h"
 #include "settings.h"
+#include "serialization.h"
 #include "opengl.h"
 #include <math.h>
 #include <assert.h>
@@ -178,12 +179,17 @@ int main(int argc, const char** argv)
 		rg_int(&rg, 0, 3) != 0 ? 2 :
 		rg_int(&rg, 1, 4);
 	unsigned int tnu = tn;
+	
+	info.part_number = (256 * 6);
 	info.type_number = tn;
+	info.change_type_law_number = CHANGE_TYPE_LAW_NUMBER;
+	info.pil_step_number = PIL_STEP_NUMBER;
+	info.pil_step_dist = 0.006f;
 
 	GLuint buf_info_id;
 	glGenBuffers(1, &buf_info_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_info_id);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(universe_info_t),
+	glBufferData(GL_ARRAY_BUFFER, sizeof info,
 		&info, GL_STATIC_DRAW);
 
 	part_type_t* type_table = malloc(tn * sizeof(part_type_t));
@@ -605,6 +611,11 @@ int main(int argc, const char** argv)
 							glBufferData(GL_ARRAY_BUFFER,
 								tn * sizeof(part_type_t),
 								type_table, GL_STATIC_DRAW);
+						break;
+
+						case SDLK_s:
+							serialize_universe_rules("uwu.ipsysd",
+								&info, pil_set_table, type_table);
 						break;
 					}
 				break;

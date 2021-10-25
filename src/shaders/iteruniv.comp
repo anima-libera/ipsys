@@ -79,7 +79,11 @@ layout(shared, binding = 3) buffer buffer_pil_set
 };
 layout(shared, binding = 4) buffer buffer_info
 {
+	uint part_number;
 	uint type_number;
+	uint change_type_law_number;
+	uint pil_step_number;
+	float pil_step_dist;
 };
 
 layout(location = 0) uniform int u_update_position;
