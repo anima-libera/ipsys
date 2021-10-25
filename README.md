@@ -48,7 +48,8 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 - The P key randomizes the particle positions.
 - The escape key terminates execution (same as closing the window).
 - The T key switches between the rendering of each iteration and each frame.
-- The W key toggles fading (temporary fix for issue #3).
+- The W key toggles fading.
+- The S key saves the current rule set to a file (work in progress).
 
 ## TODO
 
