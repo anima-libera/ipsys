@@ -7,6 +7,7 @@
 #ifndef IPSYS_HEADER_UNIVERSE__
 #define IPSYS_HEADER_UNIVERSE__
 
+#include "random.h"
 #include "opengl.h"
 
 /* Particle struct that holds all the data describing what is exclusive to a
@@ -72,5 +73,18 @@ struct __attribute__((packed)) universe_info_t
 	GLuint type_number;
 };
 typedef struct universe_info_t universe_info_t;
+
+void randomize_colors(part_type_t* type_table, unsigned int type_number,
+	rg_t* rg);
+void randomize_change_laws(part_type_t* type_table, unsigned int type_number,
+	unsigned int change_type_law_number, rg_t* rg);
+void disable_change_laws(part_type_t* type_table, unsigned int type_number,
+	unsigned int change_type_law_number);
+void randomize_parts(part_t* part_array, unsigned int part_number,
+	unsigned int type_number, rg_t* rg);
+void randomize_pils(pil_set_t* pil_set_table, unsigned int type_number,
+	rg_t* rg);
+void mutate_pils(pil_set_t* pil_set_table, unsigned int type_number,
+	rg_t* rg);
 
 #endif /* IPSYS_HEADER_UNIVERSE__ */

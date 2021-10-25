@@ -16,217 +16,6 @@
 #error C compiler required
 #endif
 
-void randomize_colors(part_type_t* type_table, unsigned int type_number,
-	rg_t* rg)
-{
-	for (unsigned int i = 0; i < type_number; ++i)
-	{
-		type_table[i].br = rg_float(rg, 0.0f, 1.0f);
-		type_table[i].bg = rg_float(rg, 0.0f, 1.0f);
-		type_table[i].bb = rg_float(rg, 0.0f, 1.0f);
-		type_table[i].sr = rg_float(rg, -100.0f, 100.0f);
-		type_table[i].sg = rg_float(rg, -100.0f, 100.0f);
-		type_table[i].sb = rg_float(rg, -100.0f, 100.0f);
-		type_table[i].pr = rg_float(rg, -100.0f, 100.0f);
-		type_table[i].pg = rg_float(rg, -100.0f, 100.0f);
-		type_table[i].pb = rg_float(rg, -100.0f, 100.0f);
-	}
-}
-
-void randomize_change_laws(
-	part_type_t* type_table, unsigned int type_number,
-	unsigned int change_type_law_number,
-	rg_t* rg)
-{
-	for (unsigned int i = 0; i < type_number; ++i)
-	for (unsigned int j = 0; j < change_type_law_number; ++j)
-	{
-		change_type_law_t* ctl = &type_table[i].change_type_law_array[j];
-		ctl->used = (type_number > 1) * rg_int(rg, 0, 1);
-		if (!ctl->used)
-		{
-			continue;
-		}
-		ctl->has_speed_min = 0;//rg_int(rg, 0, 1);
-		ctl->has_speed_max = 0;//rg_int(rg, 0, 1);
-		ctl->has_pressure_min = 1;//rg_int(rg, 0, 1);
-		ctl->has_pressure_max = 0;//rg_int(rg, 0, 1);
-		ctl->has_age_min = 1;//rg_int(rg, 0, 1);
-		ctl->has_age_max = 0;//rg_int(rg, 0, 1);
-		ctl->speed_min = rg_float(rg, 0.0f, 0.02f);
-		ctl->speed_max = rg_float(rg, 0.0f, 0.02f);
-		ORDER(float, ctl->speed_min, ctl->speed_max);
-		ctl->pressure_min = rg_float(rg, 0.0f, 1.5f);
-		ctl->pressure_max = rg_float(rg, 0.0f, 1.5f);
-		ORDER(float, ctl->pressure_min, ctl->pressure_max);
-		ctl->age_min = rg_int(rg, 0, 200);
-		ctl->age_max = rg_int(rg, 0, 200);
-		ORDER(unsigned int, ctl->age_min, ctl->age_max);
-		do {
-			ctl->new_type = rg_int(rg, 0, type_number-1);
-		} while (ctl->new_type == i);
-		ctl->probability = rg_float(rg, 0.0f, 0.1f);
-	}
-}
-
-void disable_change_laws(
-	part_type_t* type_table, unsigned int type_number,
-	unsigned int change_type_law_number)
-{
-	for (unsigned int i = 0; i < type_number; ++i)
-	for (unsigned int j = 0; j < change_type_law_number; ++j)
-	{
-		change_type_law_t* ctl = &type_table[i].change_type_law_array[j];
-		ctl->used = 0;
-	}
-}
-
-void randomize_parts(
-	part_t* part_array,
-	unsigned int part_number, unsigned int type_number,
-	rg_t* rg)
-{
-	for (unsigned int i = 0; i < part_number; ++i)
-	{
-		part_array[i].x = rg_float(rg, -1.0f, 1.0f);
-		part_array[i].y = rg_float(rg, -1.0f, 1.0f);
-		part_array[i].speed = 0.0f;
-		part_array[i].angle = rg_float(rg, 0.0f, TAU);
-		part_array[i].type = rg_int(rg, 0, type_number-1);
-		part_array[i].age = 0;
-	}
-}
-
-void randomize_pils(pil_set_t* pil_set_table, unsigned int type_number,
-	rg_t* rg)
-{
-	int continuous = 1;//rg_int(rg, 1, 5);
-	for (unsigned int i = 0; i < type_number; ++i)
-	for (unsigned int j = 0; j < type_number; ++j)
-	{
-		pil_set_t* pil_set = &pil_set_table[i * type_number + j];
-
-		/* attraction */
-		pil_set->attraction.steps[0].offset = rg_int(rg, 0, 8) == 0 ?
-			rg_float(rg, -0.0010f, 0.0010f) :
-			rg_float(rg, 0.0003f, 0.0005f);
-		pil_set->attraction.steps[0].slope = 0.0f;
-		for (int s = 1; s < PISL_STEP_NUMBER; ++s)
-		{
-			if (rg_int(rg, 0, continuous) == 0)
-			{
-				if (rg_int(rg, 0, s) > 5)
-				{
-					pil_set->attraction.steps[s].offset = 0.0f;
-					pil_set->attraction.steps[s].slope = 0.0f;
-				}
-				else
-				{
-					float e = (rg_int(rg, 0, 15) == 0) ?
-						0.0007f / ((float)(s)) :
-						0.0007f / ((float)(s*s));
-					pil_set->attraction.steps[s].offset =
-						rg_float(rg, -e/* *0.75f */, e);
-					pil_set->attraction.steps[s].slope = 0.0f;
-				}
-			}
-			else
-			{
-				pil_set->attraction.steps[s].offset =
-					pil_set->attraction.steps[s-1].offset;
-				pil_set->attraction.steps[s].slope = 0.0f;
-			}
-		}
-
-		/* angle */
-		pil_set->angle.steps[0].offset = 0.0f;
-		pil_set->angle.steps[0].slope = 0.0f;
-		for (int s = 1; s < PISL_STEP_NUMBER; ++s)
-		{
-			if (rg_int(rg, 0, continuous) == 0)
-			{
-				if (rg_int(rg, 0, 5) != 0)
-				{
-					pil_set->angle.steps[s].offset = 0.0f;
-					pil_set->angle.steps[s].slope = 0.0f;
-				}
-				else
-				{
-					float e = (rg_int(rg, 0, 4) == 0) ?
-						TAU/4.0f : 
-						TAU/10.0f;
-					pil_set->angle.steps[s].offset =
-						rg_float(rg, -e, e);
-					pil_set->angle.steps[s].slope = 0.0f;
-				}
-			}
-			else
-			{
-				pil_set->angle.steps[s].offset =
-					pil_set->angle.steps[s-1].offset;
-				pil_set->angle.steps[s].slope = 0.0f;
-			}
-		}
-
-		/* speed */
-		pil_set->speed.steps[0].offset = (rg_int(rg, 0, 4) == 0) ?
-			rg_float(rg, -0.0010f, 0.0010f) : 
-			0.0f;
-		pil_set->speed.steps[0].slope = 0.0f;
-		for (int s = 1; s < PISL_STEP_NUMBER; ++s)
-		{
-			if (rg_int(rg, 0, continuous) == 0)
-			{
-				if (rg_int(rg, 0, 10) != 0)
-				{
-					pil_set->speed.steps[s].offset = 0.0f;
-					pil_set->speed.steps[s].slope = 0.0f;
-				}
-				else
-				{
-					float e = (rg_int(rg, 0, 4) == 0) ?
-						0.0007f / ((float)(s)) :
-						0.0007f / ((float)(s*s));
-					pil_set->speed.steps[s].offset =
-						rg_float(rg, -e, e);
-					pil_set->speed.steps[s].slope = 0.0f;
-				}
-			}
-			else
-			{
-				pil_set->speed.steps[s].offset =
-					pil_set->speed.steps[s-1].offset;
-				pil_set->speed.steps[s].slope = 0.0f;
-			}
-		}
-	}
-}
-
-void mutate_pils(pil_set_t* pil_set_table, unsigned int type_number, rg_t* rg)
-{
-	for (unsigned int i = 0; i < type_number; ++i)
-	for (unsigned int j = 0; j < type_number; ++j)
-	{
-		pil_set_t* pil_set = &pil_set_table[i * type_number + j];
-
-		for (int s = 0; s < PISL_STEP_NUMBER; ++s)
-		{
-			#define MUTATE(x_, f_, v_) x_ += rg_float(rg, \
-				-f_ * (x_ > 0.0f ? v_ : 1.0f), \
-				+f_ * (x_ < 0.0f ? v_ : 1.0f)) / ((float)(s+60) / 60.0f)
-
-			MUTATE(pil_set->attraction.steps[s].offset, 0.000001f, 1.1f);
-			MUTATE(pil_set->attraction.steps[s].slope, 0.000001f, 1.1f);
-			MUTATE(pil_set->angle.steps[s].offset, 0.000001f, 1.1f);
-			MUTATE(pil_set->angle.steps[s].slope, 0.000001f, 1.1f);
-			MUTATE(pil_set->speed.steps[s].offset, 0.0000002f, 1.1f);
-			MUTATE(pil_set->speed.steps[s].slope, 0.0000002f, 1.1f);
-
-			#undef MUTATE
-		}
-	}
-}
-
 struct __attribute__((packed)) ui_vertex_t
 {
 	GLfloat x, y;
@@ -428,13 +217,13 @@ int main(int argc, const char** argv)
 	GLuint buf_part_curr_id;
 	glGenBuffers(1, &buf_part_curr_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_part_curr_id);
-	glBufferData(GL_ARRAY_BUFFER, PARTICLE_NUMBER * sizeof(part_t),
+	glBufferData(GL_ARRAY_BUFFER, sizeof part_array,
 		part_array, GL_DYNAMIC_DRAW);
 
 	GLuint buf_part_next_id;
 	glGenBuffers(1, &buf_part_next_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_part_next_id);
-	glBufferData(GL_ARRAY_BUFFER, PARTICLE_NUMBER * sizeof(part_t),
+	glBufferData(GL_ARRAY_BUFFER, sizeof part_array,
 		part_array, GL_DYNAMIC_DRAW);
 
 	#define WORK_GROUP_SIZE 256
@@ -488,7 +277,7 @@ int main(int argc, const char** argv)
 	GLuint buf_univ_full_rect_id;
 	glGenBuffers(1, &buf_univ_full_rect_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_univ_full_rect_id);
-	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(just_vertex_t),
+	glBufferData(GL_ARRAY_BUFFER, sizeof univ_full_rect_array,
 		univ_full_rect_array, GL_STATIC_DRAW);
 
 	/* UI setup. */
@@ -529,7 +318,7 @@ int main(int argc, const char** argv)
 	GLuint buf_ui_line_id;
 	glGenBuffers(1, &buf_ui_line_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_ui_line_id);
-	glBufferData(GL_ARRAY_BUFFER, BAR_NUMBER * 4 * sizeof(ui_vertex_t),
+	glBufferData(GL_ARRAY_BUFFER, sizeof ui_line_vertex_array,
 		ui_line_vertex_array, GL_STATIC_DRAW);
 
 	GLuint ui_line_vertex_index_array[BAR_NUMBER * 8];
@@ -548,7 +337,7 @@ int main(int argc, const char** argv)
 	GLuint buf_ui_line_index_id;
 	glGenBuffers(1, &buf_ui_line_index_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf_ui_line_index_id);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, BAR_NUMBER * 8 * sizeof(GLuint),
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof ui_line_vertex_index_array,
 		ui_line_vertex_index_array, GL_STATIC_DRAW);
 
 	ui_vertex_t ui_rect_vertex_array[BAR_NUMBER * 4];
@@ -581,7 +370,7 @@ int main(int argc, const char** argv)
 	GLuint buf_ui_rect_id;
 	glGenBuffers(1, &buf_ui_rect_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_ui_rect_id);
-	glBufferData(GL_ARRAY_BUFFER, BAR_NUMBER * 4 * sizeof(ui_vertex_t),
+	glBufferData(GL_ARRAY_BUFFER, sizeof ui_rect_vertex_array,
 		ui_rect_vertex_array, GL_STATIC_DRAW);
 
 	GLuint ui_rect_vertex_index_array[BAR_NUMBER * 6];
@@ -598,7 +387,7 @@ int main(int argc, const char** argv)
 	GLuint buf_ui_rect_index_id;
 	glGenBuffers(1, &buf_ui_rect_index_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf_ui_rect_index_id);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, BAR_NUMBER * 6 * sizeof(GLuint),
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof ui_rect_vertex_index_array,
 		ui_rect_vertex_index_array, GL_STATIC_DRAW);
 
 	ui_vertex_t ui_bg_vertex_array[4] = {
@@ -618,7 +407,7 @@ int main(int argc, const char** argv)
 	GLuint buf_ui_bg_id;
 	glGenBuffers(1, &buf_ui_bg_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_ui_bg_id);
-	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(ui_vertex_t),
+	glBufferData(GL_ARRAY_BUFFER, sizeof ui_bg_vertex_array,
 		ui_bg_vertex_array, GL_STATIC_DRAW);
 
 	/* Core loop. */
@@ -757,33 +546,6 @@ int main(int argc, const char** argv)
 
 						case SDLK_w:
 							no_fading = !no_fading;
-							#if 0
-							if (no_fading)
-							{
-								setting_set_fade_factor(0.0f);
-
-								ui_rect_filled_x[0] =
-									ui_length *
-									(1.0f - g_setting_read_fade_factor /
-										SETTING_FADE_FACTOR_MAX);
-
-								unsigned int i = 0;
-								float ui_setup_y = 800.0f - (float)i * (2.0f * ui_margin + ui_size);
-								ui_rect_vertex_array[i * 4 + 0].x = 800.0f - ui_margin - ui_rect_filled_x[i];
-								ui_rect_vertex_array[i * 4 + 1].x = ui_margin;
-								ui_rect_vertex_array[i * 4 + 2].x = 800.0f - ui_margin - ui_rect_filled_x[i];
-								ui_rect_vertex_array[i * 4 + 3].x = ui_margin;
-								ui_rect_vertex_array[i * 4 + 0].y = ui_setup_y - ui_margin;
-								ui_rect_vertex_array[i * 4 + 1].y = ui_setup_y - ui_margin;
-								ui_rect_vertex_array[i * 4 + 2].y = ui_setup_y - ui_margin - ui_size;
-								ui_rect_vertex_array[i * 4 + 3].y = ui_setup_y - ui_margin - ui_size;
-
-								glBindBuffer(GL_ARRAY_BUFFER, buf_ui_rect_id);
-								glBufferData(GL_ARRAY_BUFFER,
-									BAR_NUMBER * 4 * sizeof(ui_vertex_t),
-									ui_rect_vertex_array, GL_STATIC_DRAW);
-							}
-							#endif
 						break;
 
 						case SDLK_t:
@@ -851,8 +613,8 @@ int main(int argc, const char** argv)
 
 		/* Render the UI. */
 		{
-			#define ATTRIB_LOCATION_POS ((GLuint)0)
-			#define ATTRIB_LOCATION_COLOR ((GLuint)1)
+			#define ATTRIB_LOCATION_POS 0
+			#define ATTRIB_LOCATION_COLOR 1
 
 			glViewport(800, 0, 800, 800);
 			glUseProgram(g_shprog_draw_ui_simple);
@@ -895,65 +657,17 @@ int main(int argc, const char** argv)
 			
 			glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
 			glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
-			glUseProgram((GLuint)0);
+			glUseProgram(0);
 
 			#undef ATTRIB_LOCATION_POS
 			#undef ATTRIB_LOCATION_COLOR
 		}
 
-		#if 0
-		/* Render fade in the universe. */
-		if (!no_fading)
-		{
-			glViewport(0, 0, 800, 800);
-			glEnable(GL_BLEND);
-			glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
-			glBlendFunc(GL_ONE, GL_ONE);
-			glUseProgram(g_shprog_draw_fade);
-			glDrawArrays(GL_POINTS, 0, 1);
-			glUseProgram((GLuint)0);
-			glDisable(GL_BLEND);
-		}
-		else
-		{
-			glViewport(0, 0, 800, 800);
-			glUseProgram(g_shprog_draw_fade);
-			glDrawArrays(GL_POINTS, 0, 1);
-			glUseProgram((GLuint)0);
-		}
-		#endif
-
-		#if 0
-		{
-			glBindFramebuffer(GL_FRAMEBUFFER,
-				univ_fbo_double_id[univ_rendering_index]);
-			glViewport(0, 0, 800, 800);
-
-			if (no_fading)
-			{
-				glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-				glClear(GL_COLOR_BUFFER_BIT);
-			}
-			else
-			{
-				glEnable(GL_BLEND);
-				glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
-				glBlendFunc(GL_ONE, GL_ONE);
-				glUseProgram(g_shprog_draw_fade);
-				glDrawArrays(GL_POINTS, 0, 1);
-				glUseProgram((GLuint)0);
-				glDisable(GL_BLEND);
-			}
-
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		}
-		#endif
-
+		/* Fade-to-black effect in the universe. */
 		if (no_fading)
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER,
 				univ_fbo_double_id[univ_rendering_index]);
-			//glViewport(0, 0, 800, 800);
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -966,12 +680,6 @@ int main(int argc, const char** argv)
 
 			glActiveTexture(GL_TEXTURE0 + 0);
 			glBindTexture(GL_TEXTURE_2D, univ_texture_double_id[1-univ_rendering_index]);
-			
-			#if 0
-			glProgramUniform1i(g_shprog_draw_texture_fade, 1, 0);
-			glUseProgram(g_shprog_draw_texture_fade);
-			glDrawArrays(GL_POINTS, 0, 1);
-			#endif
 
 			#define ATTRIB_LOCATION_POS 0
 
@@ -988,11 +696,12 @@ int main(int argc, const char** argv)
 			
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-			glUseProgram((GLuint)0);
+			glUseProgram(0);
 
 			#undef ATTRIB_LOCATION_POS
 		}
 
+		/* Universe iterations. */
 		for (unsigned int i = 0; i < iteration_number_per_frame; i++)
 		{
 			if (render_each_iteration)
@@ -1024,10 +733,10 @@ int main(int argc, const char** argv)
 					univ_fbo_double_id[univ_rendering_index]);
 				glViewport(0, 0, 800, 800);
 
-				#define ATTRIB_LOCATION_POS ((GLuint)0)
-				#define ATTRIB_LOCATION_COLOR ((GLuint)1)
-				#define ATTRIB_LOCATION_ANGLE ((GLuint)2)
-				#define ATTRIB_LOCATION_OLDPOS ((GLuint)3)
+				#define ATTRIB_LOCATION_POS 0
+				#define ATTRIB_LOCATION_COLOR 1
+				#define ATTRIB_LOCATION_ANGLE 2
+				#define ATTRIB_LOCATION_OLDPOS 3
 
 				glUseProgram(g_shprog_draw_particles);
 				glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
@@ -1051,7 +760,7 @@ int main(int argc, const char** argv)
 				glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
 				glDisableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
 				glDisableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
-				glUseProgram((GLuint)0);
+				glUseProgram(0);
 
 				#undef ATTRIB_LOCATION_POS
 				#undef ATTRIB_LOCATION_COLOR
@@ -1082,7 +791,7 @@ int main(int argc, const char** argv)
 
 	if (restart)
 	{
-		printf("Restarting\n");
+		printf("Restarting (beware memory leaks)\n");
 		goto l_beginning;
 	}
 	return 0;

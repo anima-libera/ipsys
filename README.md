@@ -14,17 +14,21 @@ on the many cores of the GPU).
 
 ## Build and run
 
-The current build system assumes being run on Linux, with Python3 and GCC
-available.
+The current build system assumes being run on Linux with Python 3.
 
 ```sh
-python3 _comp.py -l
+python3 _comp.py
 ```
 
-The `-l` option means that if compilation succeeds, the binary is then executed. Any argument that comes after the `-l` is instead given to the binary.
+Supported compilers are GCC (`--compiler=gcc` which is the default) and Clang (`--compiler=clang`).
+
+Add the `-l` option *at the end* means to execute the binary if compilation succeeded. Any argument that comes after the `-l` is instead given to the binary as its command line arguments.
+
+Use the `--help` option to get a list of options.
 
 ### Dependencies
 
+- [Python 3](https://www.python.org/) for the build system
 - [SDL2](https://www.libsdl.org/)
 - [GLEW](http://glew.sourceforge.net/) but only if building with `--use-glew`
 
@@ -105,3 +109,4 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 - Add debugging features like function calls tracing, verbose option, etc.
 - Precomile the shaders to SPIR-V or something.
 - Expand the TODO list, it is not long enough xd.
+- Be able to compile without the SDL2 library (use Xorg, Wayland, WinAPI, whatever, but keep SDL2 as an optional dependancy).
