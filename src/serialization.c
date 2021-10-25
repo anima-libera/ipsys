@@ -16,6 +16,10 @@ void serialize_universe_rules(const char* dst_filepath,
 		0, 1, 1);
 
 	fprintf(dst_file,
+		"ruleset_name { .string \"%s\" }\n",
+		"uwu");
+
+	fprintf(dst_file,
 		"univ_info {\n"
 		"\tpart_number { .int %d }\n"
 		"\ttype_number { .int %d }\n"
