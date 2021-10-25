@@ -230,7 +230,7 @@ int main(int argc, const char** argv)
 
 	setting_set_fade_factor(0.05f);
 
-	#define MAX_ITER_PER_FRAME 16
+	#define MAX_ITER_PER_FRAME 32
 	unsigned int iteration_number_per_frame = 4;
 
 	/* Universe rendering setup. */
