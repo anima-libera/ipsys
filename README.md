@@ -29,7 +29,7 @@ Use the `--help` option to get a list of options.
 ### Dependencies
 
 - [Python 3](https://www.python.org/) for the build system
-- [SDL2](https://www.libsdl.org/)
+- [SDL2](https://www.libsdl.org/) (maybe read [this](https://lazyfoo.net/tutorials/SDL/01_hello_SDL/linux/index.php))
 - [GLEW](http://glew.sourceforge.net/) but only if building with `--use-glew`
 
 ## Controls
