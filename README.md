@@ -34,8 +34,6 @@ Use the `--help` option to get a list of options.
 
 ## Controls
 
-The ipsys binary can take one command line argument which would then be the number of particle types.
-
 At runtime, the ways to interact with the simulation and rendering are listed here:
 
 - The first bar in the ui panel controls the intensity of fading.
@@ -49,10 +47,16 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 - The escape key terminates execution (same as closing the window).
 - The T key switches between the rendering of each iteration and each frame.
 - The W key toggles fading.
-- The S key saves the current rule set to a file (work in progress).
+- The S key saves the current rule set to a file.
+
+## Command line interface
+
+- `-t` followed by a number sets the number of particle types.
+- `-f` followed by a file path load the rule set described in the given file (work in progress).
 
 ## TODO
 
+- Changelog and version numbers.
 - Read a config file.
   - OpenGL version (disable some features if needed).
   - Set settings.
@@ -64,7 +68,7 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 - More UI components to tinker with the settings.
 - Text rendering for the UI.
 - Built-in console for a cool interface.
-- Configurable interface and srcripting.
+- Configurable interface and scripting.
   - Script the action of the cursor on particles with a custom scripting language.
   - Script the action of user-created UI witgets on the rules, rule generators, patricles, colors, etc.
   - Create UI witgets with scripting.
@@ -73,7 +77,7 @@ At runtime, the ways to interact with the simulation and rendering are listed he
   - Config, setting set, color theme, rules, rule generators, particle positions, all of that in different blocks.
   - Each rule should be independant from the others, and optional.
   - Understandable and modifiable by humans.
-  - One shoule be able to share such data with other users.
+  - One should be able to share such data with other users.
 - Make the build system usable with clang and on Windows.
 - View the "force" fields and motion fields.
 - Display the rules.
@@ -97,7 +101,7 @@ At runtime, the ways to interact with the simulation and rendering are listed he
   - Having the beat/melodies of a music influence the particles/colors/rules.
 - Accept shaders from outside, provided by the user.
 - Make it possible to have some dynamic library be used in place of scripts (to make it faster or to allow to call some neat C functions directly or something).
-- Multiple particle redering shaders (square, circle, something else).
+- Multiple particle rendering shaders (square, circle, something else).
 - Bloom effect.
 - Background cool color effects maybe.
 - Optimize even more.

@@ -40,16 +40,21 @@ int main(int argc, const char** argv)
 	/* Parse command line arguments. */
 
 	const char* arg_type_number = NULL;
+	const char* arg_ipsysd_filepath = NULL;
 
 	for (unsigned int i = 1; i < (unsigned int)argc; i++)
 	{
 		if (strcmp(argv[i], "-d") == 0)
 		{
-			;
+			assert(0);
 		}
-		else if (arg_type_number == NULL)
+		else if (strcmp(argv[i], "-f") == 0)
 		{
-			arg_type_number = argv[i];
+			arg_ipsysd_filepath = argv[++i];
+		}
+		else if (strcmp(argv[i], "-t") == 0)
+		{
+			arg_type_number = argv[++i];
 		}
 		else
 		{
@@ -94,6 +99,16 @@ int main(int argc, const char** argv)
 		printf("type number is %d\n", type_number);
 	}
 	l_after_type_number:
+
+	if (arg_ipsysd_filepath != NULL)
+	{
+		universe_info_t info;
+		pil_set_t* pil_set_table;
+		part_type_t* type_table;
+		deserialize_ipsysd_file(arg_ipsysd_filepath,
+			&info, &pil_set_table, &type_table);
+		return 0;
+	}
 
 	/* Initialize SDL2 and OpenGL. */
 

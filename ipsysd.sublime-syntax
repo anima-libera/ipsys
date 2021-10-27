@@ -1,0 +1,39 @@
+%YAML 1.2
+---
+name: ipsysd
+file_extensions: [ipsysd, Ipsysd, IpsysD, IPSYSD, ipsysdata, Ipsysdata, IpsysData, IPSYSDATA]
+scope: source.ipsysd
+
+contexts:
+
+  main:
+    - match: '\{'
+      scope: punctuation.section.braces.begin.ipsysd
+      push: block
+    - match: '\}'
+      scope: invalid.illegal.ipsysd
+    - match: '\.\b([a-z_]+)\b'
+      scope: storage.type.ipsysd
+    - match: '\b([a-z_]+)\b'
+      scope: entity.name.ipsysd
+    - match: '(-|\+)?[0-9]+(\.[0-9]+)?((e|E)(-|\+)?[0-9]+)?'
+      scope: constant.numeric.value.ipsysd
+    - match: '(\.)([0-9]+)'
+      captures:
+        1: punctuation.accessor.dot.ipsysd
+        2: constant.numeric.value.ipsysd
+    - match: '\"'
+      scope: punctuation.definition.string.begin.ipsysd
+      push: string
+
+  block:
+    - match: '\}'
+      scope: punctuation.section.braces.end.ipsysd
+      pop: true
+    - include: main
+
+  string:
+    - meta_scope: string.quoted.double.ipsysd
+    - match: '\"'
+      scope: punctuation.definition.string.end.ipsysd
+      pop: true

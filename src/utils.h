@@ -37,4 +37,35 @@ char* read_file(const char* filepath);
 #define ORDER(type_, inf_, sup_) \
 	do{ if (inf_ > sup_) { SWAP(type_, inf_, sup_); } }while(0)
 
+/* Used by DA_LENGTHEN. */
+unsigned int umax(unsigned int a, unsigned int b);
+
+/* Dynamic array reallocator.
+ * There is no need for such things as templates or high-level features,
+ * because C has genericity support (proof here).
+ * To use this macro for a dynamic array such as
+ *  struct {
+ *   unsigned int len;
+ *   unsigned int cap;
+ *   type_contained_t* arr;
+ *  } da = {0};
+ * then the intended invocation (for, say, add one cell) should be
+ *  DA_LENGTHEN(da.len += 1, da.cap, da.arr, type_contained_t);
+ * and new cells (in this case, one new cell) will be allocated at the end
+ * of the array, and filled with garbage values (beware!). */
+#define DA_LENGTHEN(len_expr_, cap_, arr_ptr_, elem_type_) \
+	do \
+	{ \
+		unsigned int len_ = len_expr_; \
+		if (len_ >= cap_) \
+		{ \
+			unsigned int new_cap_ = umax(len_, cap_ / 2 + 4); \
+			elem_type_* new_array_ = realloc(arr_ptr_, \
+				new_cap_ * sizeof(elem_type_)); \
+			assert(new_array_ != NULL); \
+			arr_ptr_ = new_array_; \
+			cap_ = new_cap_; \
+		} \
+	} while (0)
+
 #endif /* IPSYS_HEADER_UTILS__ */
