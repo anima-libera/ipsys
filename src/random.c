@@ -3,6 +3,8 @@
 #include <stdint.h> /* uint32_t */
 #include <time.h> /* time */
 #include <limits.h> /* UINT_MAX */
+#include <math.h> /* isfinite */
+#include <stdio.h>
 
 /* An LCG (Linear Congruencial Generator) is a random number generator with a
  * state containing only one 32-bits unsigned integer (at least here) and
@@ -75,7 +77,11 @@ int rg_int(rg_t* rg, int inf, int sup)
 
 float rg_float(rg_t* rg, float inf, float sup)
 {
-	float random_unit = ((float)rg_step(rg)) / ((float)(UINT_MAX-1));
+	float random_unit;
+	while (
+		random_unit = ((float)rg_step(rg)) / ((float)(UINT_MAX-1)),
+		!isfinite(random_unit)
+	);
 	return inf + random_unit * (sup - inf);
 }
 

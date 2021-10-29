@@ -100,16 +100,6 @@ int main(int argc, const char** argv)
 	}
 	l_after_type_number:
 
-	if (arg_ipsysd_filepath != NULL)
-	{
-		universe_info_t info;
-		pil_set_t* pil_set_table;
-		part_type_t* type_table;
-		deserialize_ipsysd_file(arg_ipsysd_filepath,
-			&info, &pil_set_table, &type_table);
-		return 0;
-	}
-
 	/* Initialize SDL2 and OpenGL. */
 
 	/* Initialize the SDL2 library and the GLEW OpenGL extension loader.
@@ -189,17 +179,44 @@ int main(int argc, const char** argv)
 	rg_time_seed(&rg);
 
 	universe_info_t info = {0};
-	unsigned int tn =
-		type_number >= 1 ? type_number :
-		rg_int(&rg, 0, 3) != 0 ? 2 :
-		rg_int(&rg, 1, 4);
+	part_type_t* type_table = NULL;
+	pil_set_t* pil_set_table = NULL;
+
+	if (arg_ipsysd_filepath != NULL)
+	{
+		//universe_info_t info;
+		//pil_set_t* pil_set_table;
+		//part_type_t* type_table;
+		deserialize_ipsysd_file(arg_ipsysd_filepath,
+			&info, &pil_set_table, &type_table);
+
+		info.change_type_law_number = CHANGE_TYPE_LAW_NUMBER;
+		disable_change_laws(type_table,
+			info.type_number, CHANGE_TYPE_LAW_NUMBER);
+	}
+	else
+	{
+		unsigned int tn =
+			type_number >= 1 ? type_number :
+			rg_int(&rg, 0, 3) != 0 ? 2 :
+			rg_int(&rg, 1, 4);
+		info.part_number = (256 * 6);
+		info.type_number = tn;
+		info.change_type_law_number = CHANGE_TYPE_LAW_NUMBER;
+		info.pil_step_number = PIL_STEP_NUMBER;
+		info.pil_step_dist = 0.006f;
+
+		type_table = malloc(tn * sizeof(part_type_t));
+		randomize_colors(type_table, tn, &rg);
+		//randomize_change_laws(type_table, tn, CHANGE_TYPE_LAW_NUMBER, &rg);
+		disable_change_laws(type_table, tn, CHANGE_TYPE_LAW_NUMBER);
+
+		pil_set_table = malloc(tn*tn * sizeof(pil_set_t));
+		randomize_pils(pil_set_table, tn, &rg);
+	}
+
+	unsigned int tn = info.type_number;
 	unsigned int tnu = tn;
-	
-	info.part_number = (256 * 6);
-	info.type_number = tn;
-	info.change_type_law_number = CHANGE_TYPE_LAW_NUMBER;
-	info.pil_step_number = PIL_STEP_NUMBER;
-	info.pil_step_dist = 0.006f;
 
 	GLuint buf_info_id;
 	glGenBuffers(1, &buf_info_id);
@@ -207,29 +224,18 @@ int main(int argc, const char** argv)
 	glBufferData(GL_ARRAY_BUFFER, sizeof info,
 		&info, GL_STATIC_DRAW);
 
-	part_type_t* type_table = malloc(tn * sizeof(part_type_t));
-	
-	randomize_colors(type_table, tn, &rg);
-
-	//randomize_change_laws(type_table, tn, CHANGE_TYPE_LAW_NUMBER, &rg);
-	disable_change_laws(type_table, tn, CHANGE_TYPE_LAW_NUMBER);
-
 	GLuint buf_type_id;
 	glGenBuffers(1, &buf_type_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_type_id);
 	glBufferData(GL_ARRAY_BUFFER, tn * sizeof(part_type_t),
 		type_table, GL_STATIC_DRAW);
-
-	pil_set_t* pil_set_table = malloc(tn*tn * sizeof(pil_set_t));
-
-	randomize_pils(pil_set_table, tn, &rg);
-
+	
 	GLuint buf_pil_set_id;
 	glGenBuffers(1, &buf_pil_set_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_pil_set_id);
 	glBufferData(GL_ARRAY_BUFFER, tn*tn * sizeof(pil_set_t),
 		pil_set_table, GL_STATIC_DRAW);
-
+	
 	#define PARTICLE_NUMBER (256 * 6)
 	part_t part_array[PARTICLE_NUMBER] = {0};
 

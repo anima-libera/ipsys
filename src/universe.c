@@ -2,6 +2,7 @@
 #include "universe.h"
 #include "random.h"
 #include "utils.h"
+#include <stdio.h>
 
 void randomize_colors(part_type_t* type_table, unsigned int type_number,
 	rg_t* rg)
