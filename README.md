@@ -52,10 +52,16 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 ## Command line interface
 
 - `-t` followed by a number sets the number of particle types.
-- `-f` followed by a file path load the rule set described in the given file (work in progress).
+- `-f` followed by a file path load the rule set described in the given file.
 
 ## TODO
 
+- Make the text-based modular data representation format even better.
+  - Config, setting set, color theme, rules, rule generators, particle positions, all of that in different blocks.
+  - Each rule should be independant from the others, and optional.
+  - Understandable and modifiable by humans.
+  - One should be able to share such data with other users.
+  - Better code (with error report, and without vulnerabilities).
 - Changelog and version numbers.
 - Read a config file.
   - OpenGL version (disable some features if needed).
@@ -73,11 +79,6 @@ At runtime, the ways to interact with the simulation and rendering are listed he
   - Script the action of user-created UI witgets on the rules, rule generators, patricles, colors, etc.
   - Create UI witgets with scripting.
   - A console line can be a witget.
-- Text-based modular data representation format, then add save/load features.
-  - Config, setting set, color theme, rules, rule generators, particle positions, all of that in different blocks.
-  - Each rule should be independant from the others, and optional.
-  - Understandable and modifiable by humans.
-  - One should be able to share such data with other users.
 - Make the build system usable with clang and on Windows.
 - View the "force" fields and motion fields.
 - Display the rules.
