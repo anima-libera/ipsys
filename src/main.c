@@ -373,10 +373,10 @@ int main(int argc, const char** argv)
 	gchar_number = 0;
 	gchar_array = calloc(gchar_maximum_number, sizeof(gchar_t));
 	gchar_t* new_gchar = &gchar_array[gchar_number++];
-	new_gchar->x = -0.1f;
-	new_gchar->y = -0.1f;
-	new_gchar->w = 0.2f;
-	new_gchar->h = 0.2f;
+	new_gchar->x = (((6.0f))/800.0f)*2.0f-1.0f;
+	new_gchar->y = ((800.0f-(49.0f))/800.0f)*2.0f-1.0f;
+	new_gchar->w = 0.08f;
+	new_gchar->h = 0.08f;
 	new_gchar->font_x = 0.0f;
 	new_gchar->font_y = 0.0f;
 	new_gchar->font_w = 0.1f;
