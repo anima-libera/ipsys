@@ -5,6 +5,7 @@
 #include "shaders.h"
 #include "universe.h"
 #include "settings.h"
+#include "serialization.h"
 #include "opengl.h"
 #include <math.h>
 #include <assert.h>
@@ -39,16 +40,21 @@ int main(int argc, const char** argv)
 	/* Parse command line arguments. */
 
 	const char* arg_type_number = NULL;
+	const char* arg_ipsysd_filepath = NULL;
 
 	for (unsigned int i = 1; i < (unsigned int)argc; i++)
 	{
 		if (strcmp(argv[i], "-d") == 0)
 		{
-			;
+			assert(0);
 		}
-		else if (arg_type_number == NULL)
+		else if (strcmp(argv[i], "-f") == 0)
 		{
-			arg_type_number = argv[i];
+			arg_ipsysd_filepath = argv[++i];
+		}
+		else if (strcmp(argv[i], "-t") == 0)
+		{
+			arg_type_number = argv[++i];
 		}
 		else
 		{
@@ -173,42 +179,63 @@ int main(int argc, const char** argv)
 	rg_time_seed(&rg);
 
 	universe_info_t info = {0};
-	unsigned int tn =
-		type_number >= 1 ? type_number :
-		rg_int(&rg, 0, 3) != 0 ? 2 :
-		rg_int(&rg, 1, 4);
+	part_type_t* type_table = NULL;
+	pil_set_t* pil_set_table = NULL;
+
+	if (arg_ipsysd_filepath != NULL)
+	{
+		//universe_info_t info;
+		//pil_set_t* pil_set_table;
+		//part_type_t* type_table;
+		deserialize_ipsysd_file(arg_ipsysd_filepath,
+			&info, &pil_set_table, &type_table);
+
+		info.change_type_law_number = CHANGE_TYPE_LAW_NUMBER;
+		disable_change_laws(type_table,
+			info.type_number, CHANGE_TYPE_LAW_NUMBER);
+	}
+	else
+	{
+		unsigned int tn =
+			type_number >= 1 ? type_number :
+			rg_int(&rg, 0, 3) != 0 ? 2 :
+			rg_int(&rg, 1, 4);
+		info.part_number = (256 * 6);
+		info.type_number = tn;
+		info.change_type_law_number = CHANGE_TYPE_LAW_NUMBER;
+		info.pil_step_number = PIL_STEP_NUMBER;
+		info.pil_step_dist = 0.006f;
+
+		type_table = malloc(tn * sizeof(part_type_t));
+		randomize_colors(type_table, tn, &rg);
+		//randomize_change_laws(type_table, tn, CHANGE_TYPE_LAW_NUMBER, &rg);
+		disable_change_laws(type_table, tn, CHANGE_TYPE_LAW_NUMBER);
+
+		pil_set_table = malloc(tn*tn * sizeof(pil_set_t));
+		randomize_pils(pil_set_table, tn, &rg);
+	}
+
+	unsigned int tn = info.type_number;
 	unsigned int tnu = tn;
-	info.type_number = tn;
 
 	GLuint buf_info_id;
 	glGenBuffers(1, &buf_info_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_info_id);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(universe_info_t),
+	glBufferData(GL_ARRAY_BUFFER, sizeof info,
 		&info, GL_STATIC_DRAW);
-
-	part_type_t* type_table = malloc(tn * sizeof(part_type_t));
-	
-	randomize_colors(type_table, tn, &rg);
-
-	//randomize_change_laws(type_table, tn, CHANGE_TYPE_LAW_NUMBER, &rg);
-	disable_change_laws(type_table, tn, CHANGE_TYPE_LAW_NUMBER);
 
 	GLuint buf_type_id;
 	glGenBuffers(1, &buf_type_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_type_id);
 	glBufferData(GL_ARRAY_BUFFER, tn * sizeof(part_type_t),
 		type_table, GL_STATIC_DRAW);
-
-	pil_set_t* pil_set_table = malloc(tn*tn * sizeof(pil_set_t));
-
-	randomize_pils(pil_set_table, tn, &rg);
-
+	
 	GLuint buf_pil_set_id;
 	glGenBuffers(1, &buf_pil_set_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_pil_set_id);
 	glBufferData(GL_ARRAY_BUFFER, tn*tn * sizeof(pil_set_t),
 		pil_set_table, GL_STATIC_DRAW);
-
+	
 	#define PARTICLE_NUMBER (256 * 6)
 	part_t part_array[PARTICLE_NUMBER] = {0};
 
@@ -605,6 +632,11 @@ int main(int argc, const char** argv)
 							glBufferData(GL_ARRAY_BUFFER,
 								tn * sizeof(part_type_t),
 								type_table, GL_STATIC_DRAW);
+						break;
+
+						case SDLK_s:
+							serialize_universe_rules("uwu.ipsysd",
+								&info, pil_set_table, type_table);
 						break;
 					}
 				break;

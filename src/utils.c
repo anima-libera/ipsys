@@ -63,3 +63,8 @@ char* read_file(const char* filepath)
 	buffer[length] = '\0';
 	return buffer;
 }
+
+unsigned int umax(unsigned int a, unsigned int b)
+{
+	return a > b ? a : b;
+}
