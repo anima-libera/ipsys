@@ -56,6 +56,8 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 
 ## TODO
 
+- Text rendering for the UI.
+- More UI components to tinker with the settings.
 - Make the text-based modular data representation format even better.
   - Config, setting set, color theme, rules, rule generators, particle positions, all of that in different blocks.
   - Each rule should be independant from the others, and optional.
@@ -71,8 +73,6 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 - Making particles able to changhe their individual size according to new types of rules.
 - Add an history of rules to be able to return to previous rules.
 - The `main.c` file should be small, not big ><.
-- More UI components to tinker with the settings.
-- Text rendering for the UI.
 - Built-in console for a cool interface.
 - Configurable interface and scripting.
   - Script the action of the cursor on particles with a custom scripting language.
