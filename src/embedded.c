@@ -17,6 +17,15 @@ const char* g_ui_simple_vert = "\n#version 430 core\nlayout(location = 0) in vec
 /* Content of "src/shaders/ui_simple.frag". */
 const char* g_ui_simple_frag = "\n#version 430 core\nin vec3 v_color;\nout vec4 out_color;\n\nvoid main()\n{\n\tout_color = vec4(v_color, 1.0);\n}\n";
 
+/* Content of "src/shaders/gchars.vert". */
+const char* g_gchars_vert = "\n#version 430 core\nlayout(location = 0) in vec4 in_pos_xywh;\nlayout(location = 1) in vec4 in_font_xywh;\nout vec4 v_font_xywh;\n\nvoid main()\n{\n\tgl_Position = in_pos_xywh;\n\tv_font_xywh = in_font_xywh;\n}\n";
+
+/* Content of "src/shaders/gchars.geom". */
+const char* g_gchars_geom = "\n#version 430 core\nlayout(location = 0) uniform float u_aspect_ratio;\nlayout(points) in;\nlayout(triangle_strip, max_vertices = 4) out;\nin vec4 v_font_xywh[];\nout vec2 g_font_pos;\n\nvoid main()\n{\n\tfloat x = gl_in[0].gl_Position.x;\n\tfloat y = gl_in[0].gl_Position.y;\n\tfloat w = gl_in[0].gl_Position.z;\n\tfloat h = gl_in[0].gl_Position.w;\n\tfloat f_x = v_font_xywh[0].x;\n\tfloat f_y = v_font_xywh[0].y;\n\tfloat f_w = v_font_xywh[0].z;\n\tfloat f_h = v_font_xywh[0].w;\n\n\tgl_Position = vec4(x, y * u_aspect_ratio, 0.0, 1.0);\n\tg_font_pos = vec2(f_x, f_y);\n\tEmitVertex();\n\n\tgl_Position = vec4(x + w, y * u_aspect_ratio, 0.0, 1.0);\n\tg_font_pos = vec2(f_x + f_w, f_y);\n\tEmitVertex();\n\n\tgl_Position = vec4(x, (y + h) * u_aspect_ratio, 0.0, 1.0);\n\tg_font_pos = vec2(f_x, f_y + f_h);\n\tEmitVertex();\n\n\tgl_Position = vec4(x + w, (y + h) * u_aspect_ratio, 0.0, 1.0);\n\tg_font_pos = vec2(f_x + f_w, f_y + f_h);\n\tEmitVertex();\n\n\tEndPrimitive();\n}\n";
+
+/* Content of "src/shaders/gchars.frag". */
+const char* g_gchars_frag = "\n#version 430 core\nlayout(location = 1) uniform sampler2D u_font_texture;\nin vec2 g_font_pos;\nout vec4 out_color;\n\nvoid main()\n{\n\tvec4 font_color = vec4(texture(u_font_texture, g_font_pos));\n\t\n\tif (font_color.r != 1.0)\n\t{\n\t\tdiscard;\n\t}\n\n\tout_color = vec4(font_color.r, font_color.r, font_color.r, 1.0);\n}\n";
+
 /* Content of "src/shaders/fade.vert". */
 const char* g_fade_vert = "\n#version 430 core\n\nvoid main()\n{\n\tgl_Position = vec4(0.0, 0.0, 0.0, 1.0);\n}\n";
 

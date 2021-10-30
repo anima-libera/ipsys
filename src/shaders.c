@@ -213,6 +213,7 @@ static GLuint shprog_build_comp(const char* src_comp, const char* dbg_info)
 
 GLuint g_shprog_draw_particles = 0;
 GLuint g_shprog_draw_ui_simple = 0;
+GLuint g_shprog_draw_gchars = 0;
 GLuint g_shprog_draw_fade = 0;
 GLuint g_shprog_draw_texture_fade = 0;
 GLuint g_shprog_draw_texture_fade_2 = 0;
@@ -244,6 +245,8 @@ int shprog_build_all(void)
 		g_particles_vert, g_particles_geom, g_particles_frag);
 	BUILD_VGF(g_shprog_draw_ui_simple,
 		g_ui_simple_vert, NULL, g_ui_simple_frag);
+	BUILD_VGF(g_shprog_draw_gchars,
+		g_gchars_vert, g_gchars_geom, g_gchars_frag);
 	BUILD_VGF(g_shprog_draw_fade,
 		g_fade_vert, g_fade_geom, g_fade_frag);
 	BUILD_VGF(g_shprog_draw_texture_fade,
@@ -273,6 +276,7 @@ void shprog_destroy_all(void)
 
 	CLEANUP_SHPROG(g_shprog_draw_particles);
 	CLEANUP_SHPROG(g_shprog_draw_ui_simple);
+	CLEANUP_SHPROG(g_shprog_draw_gchars);
 	CLEANUP_SHPROG(g_shprog_draw_fade);
 	CLEANUP_SHPROG(g_shprog_draw_texture_fade);
 	CLEANUP_SHPROG(g_shprog_draw_texture_fade_2);

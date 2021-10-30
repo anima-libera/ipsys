@@ -12,6 +12,7 @@
  * and unset by a call to shprog_destroy_all. */
 extern GLuint g_shprog_draw_particles;
 extern GLuint g_shprog_draw_ui_simple;
+extern GLuint g_shprog_draw_gchars;
 extern GLuint g_shprog_draw_fade;
 extern GLuint g_shprog_draw_texture_fade;
 extern GLuint g_shprog_draw_texture_fade_2;
