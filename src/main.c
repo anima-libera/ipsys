@@ -123,6 +123,12 @@ struct ui_line_t
 };
 typedef struct ui_line_t ui_line_t;
 
+struct ui_triangle_t
+{
+	ui_vertex_t a, b, c;
+};
+typedef struct ui_triangle_t ui_triangle_t;
+
 void uipt_init(uipt_t* uipt, unsigned int sizeof_prim, drawcall_callback_t drawcall_callback)
 {
 	uipt->block_da_len = 0;
@@ -211,6 +217,33 @@ void line_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count)
 		GL_FALSE, sizeof(ui_vertex_t),
 		(void*)offsetof(ui_vertex_t, r));
 	glDrawArrays(GL_LINES, 0, prim_count * 2);
+	
+	glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
+	glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+	glUseProgram(0);
+
+	#undef ATTRIB_LOCATION_POS
+	#undef ATTRIB_LOCATION_COLOR
+}
+
+void triangle_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count)
+{
+	#define ATTRIB_LOCATION_POS 0
+	#define ATTRIB_LOCATION_COLOR 1
+
+	glViewport(800, 0, 800, 800);
+	glUseProgram(g_shprog_draw_ui_simple);
+	glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
+	glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+
+	glBindBuffer(GL_ARRAY_BUFFER, opengl_buffer_id);
+	glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
+		GL_FALSE, sizeof(ui_vertex_t),
+		(void*)offsetof(ui_vertex_t, x));
+	glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
+		GL_FALSE, sizeof(ui_vertex_t),
+		(void*)offsetof(ui_vertex_t, r));
+	glDrawArrays(GL_TRIANGLES, 0, prim_count * 3);
 	
 	glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
 	glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
@@ -498,9 +531,8 @@ int main(int argc, const char** argv)
 
 	uipt_t ui_line_table;
 	uipt_init(&ui_line_table, sizeof(ui_line_t), line_drawcall_callback);
-
-	unsigned int block_index = uipt_alloc_prim_block(&ui_line_table, 4);
-	ui_line_t* line_block = uipt_get_prim_block(&ui_line_table, block_index);
+	unsigned int line_block_index = uipt_alloc_prim_block(&ui_line_table, 4);
+	ui_line_t* line_block = uipt_get_prim_block(&ui_line_table, line_block_index);
 	line_block[0].a = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
 	line_block[0].b = (ui_vertex_t){.x = 600.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
 	line_block[1].a = (ui_vertex_t){.x = 600.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
@@ -509,6 +541,17 @@ int main(int argc, const char** argv)
 	line_block[2].b = (ui_vertex_t){.x = 200.5f, .y = 600.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
 	line_block[3].a = (ui_vertex_t){.x = 200.5f, .y = 600.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
 	line_block[3].b = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+
+	uipt_t ui_triangle_table;
+	uipt_init(&ui_triangle_table, sizeof(ui_triangle_t), triangle_drawcall_callback);
+	unsigned int triangle_block_index = uipt_alloc_prim_block(&ui_triangle_table, 2);
+	ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_triangle_table, triangle_block_index);
+	triangle_block[0].a = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
+	triangle_block[0].b = (ui_vertex_t){.x = 200.5f, .y = 600.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
+	triangle_block[0].c = (ui_vertex_t){.x = 600.5f, .y = 600.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
+	triangle_block[1].a = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
+	triangle_block[1].b = (ui_vertex_t){.x = 600.5f, .y = 600.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
+	triangle_block[1].c = (ui_vertex_t){.x = 600.5f, .y = 200.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
 
 	/* Font and text setup. */
 
@@ -963,6 +1006,7 @@ int main(int argc, const char** argv)
 
 		{
 			uipt_draw(&ui_line_table);
+			uipt_draw(&ui_triangle_table);
 		}
 
 		/* Text test. */
