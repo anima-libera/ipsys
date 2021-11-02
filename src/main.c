@@ -190,13 +190,18 @@ void uipt_draw(uipt_t* uipt)
 	else if (uipt->needs_prim_buffer_sync)
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, uipt->prim_opengl_buffer_id);
-		glGetBufferSubData(GL_ARRAY_BUFFER, 0,
+		glBufferSubData(GL_ARRAY_BUFFER, 0,
 			uipt->prim_da_len * uipt->sizeof_prim, uipt->prim_da_arr);
 	}
 	uipt->needs_prim_buffer_sync_alloc = 0;
 	uipt->needs_prim_buffer_sync = 0;
 
 	uipt->drawcall_callback(uipt->prim_opengl_buffer_id, uipt->prim_da_len);
+}
+
+void uipt_needs_sync(uipt_t* uipt)
+{
+	uipt->needs_prim_buffer_sync = 1;
 }
 
 void line_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count)
@@ -748,6 +753,7 @@ int main(int argc, const char** argv)
 
 	/* Core loop. */
 
+	unsigned int t = 0;
 	int running = 1;
 	int restart = 0;
 	while (running)
@@ -952,6 +958,33 @@ int main(int argc, const char** argv)
 			}
 		}
 
+		t++;
+
+		/* Test. */
+		{
+			float v = cosf((float)t * 0.1f);
+
+			ui_line_t* line_block = uipt_get_prim_block(&ui_line_table, line_block_index);
+			line_block[0].a.x = 200.5f - 100.0f * v;
+			line_block[0].b.x = 600.5f + 100.0f * v;
+			line_block[1].a.x = 600.5f + 100.0f * v;
+			line_block[1].b.x = 600.5f + 100.0f * v;
+			line_block[2].a.x = 600.5f + 100.0f * v;
+			line_block[2].b.x = 200.5f - 100.0f * v;
+			line_block[3].a.x = 200.5f - 100.0f * v;
+			line_block[3].b.x = 200.5f - 100.0f * v;
+			uipt_needs_sync(&ui_line_table);
+
+			ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_triangle_table, triangle_block_index);
+			triangle_block[0].a.x = 200.5f - 100.0f * v;
+			triangle_block[0].b.x = 200.5f - 100.0f * v;
+			triangle_block[0].c.x = 600.5f + 100.0f * v;
+			triangle_block[1].a.x = 200.5f - 100.0f * v;
+			triangle_block[1].b.x = 600.5f + 100.0f * v;
+			triangle_block[1].c.x = 600.5f + 100.0f * v;
+			uipt_needs_sync(&ui_triangle_table);
+		}
+
 		/* Render the UI. */
 		{
 			#define ATTRIB_LOCATION_POS 0
@@ -1004,9 +1037,10 @@ int main(int argc, const char** argv)
 			#undef ATTRIB_LOCATION_COLOR
 		}
 
+		/* Test. */
 		{
-			uipt_draw(&ui_line_table);
 			uipt_draw(&ui_triangle_table);
+			uipt_draw(&ui_line_table);
 		}
 
 		/* Text test. */
