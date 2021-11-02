@@ -40,6 +40,22 @@ char* read_file(const char* filepath);
 /* Used by DA_LENGTHEN. */
 unsigned int umax(unsigned int a, unsigned int b);
 
+/* See DA_LENGTHEN. This can be used on void* arrays. */
+#define TYPE_DA_LENGTHEN(len_expr_, cap_, arr_ptr_, elem_type_, elem_size_) \
+	do \
+	{ \
+		unsigned int len_ = len_expr_; \
+		if (len_ >= cap_) \
+		{ \
+			unsigned int new_cap_ = umax(len_, cap_ * 2 + 4); \
+			elem_type_* new_array_ = realloc(arr_ptr_, \
+				new_cap_ * elem_size_); \
+			assert(new_array_ != NULL); \
+			arr_ptr_ = new_array_; \
+			cap_ = new_cap_; \
+		} \
+	} while (0)
+
 /* Dynamic array reallocator.
  * There is no need for such things as templates or high-level features,
  * because C has genericity support (proof here).
@@ -54,18 +70,6 @@ unsigned int umax(unsigned int a, unsigned int b);
  * and new cells (in this case, one new cell) will be allocated at the end
  * of the array, and filled with garbage values (beware!). */
 #define DA_LENGTHEN(len_expr_, cap_, arr_ptr_, elem_type_) \
-	do \
-	{ \
-		unsigned int len_ = len_expr_; \
-		if (len_ >= cap_) \
-		{ \
-			unsigned int new_cap_ = umax(len_, cap_ / 2 + 4); \
-			elem_type_* new_array_ = realloc(arr_ptr_, \
-				new_cap_ * sizeof(elem_type_)); \
-			assert(new_array_ != NULL); \
-			arr_ptr_ = new_array_; \
-			cap_ = new_cap_; \
-		} \
-	} while (0)
+	TYPE_DA_LENGTHEN(len_expr_, cap_, arr_ptr_, elem_type_, sizeof(elem_type_))
 
 #endif /* IPSYS_HEADER_UTILS__ */

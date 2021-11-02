@@ -116,6 +116,7 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 - Precomile the shaders to SPIR-V or something.
 - Expand the TODO list, it is not long enough xd.
 - Be able to compile without the SDL2 library (use Xorg, Wayland, WinAPI, whatever, but keep SDL2 as an optional dependancy).
+- Particle splitting/fusion rules.
 
 ### Rerwite it in Rust ?
 

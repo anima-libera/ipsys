@@ -59,6 +59,167 @@ struct text_layer_t
 };
 typedef struct text_layer_t text_layer_t;
 
+#if 0
+enum widget_type_t
+{
+	WIDGET_SLIDER,
+	WIDGET_BUTTON,
+};
+typedef enum widget_type_t widget_type_t;
+
+struct widget_slider_t
+{
+	int uwu;
+};
+typedef struct widget_slider_t widget_slider_t;
+
+struct widget_button_t
+{
+	int uwu;
+};
+typedef struct widget_button_t widget_button_t;
+
+struct widget_t
+{
+	float w, h;
+	widget_type_t type;
+	union
+	{
+		widget_slider_t slider;
+		widget_button_t button;
+	};
+};
+typedef struct widget_t widget_t;
+#endif
+
+struct uip_block_t
+{
+	unsigned int len;
+	unsigned int index;
+};
+typedef struct uip_block_t uip_block_t;
+
+typedef void (*drawcall_callback_t)(GLuint opengl_buffer_id, unsigned int prim_count);
+
+struct uipt_t
+{
+	unsigned int block_da_len;
+	unsigned int block_da_cap;
+	uip_block_t* block_da_arr;
+	unsigned int prim_da_len;
+	unsigned int prim_da_cap;
+	void* prim_da_arr;
+	GLuint prim_opengl_buffer_id;
+	int needs_prim_buffer_sync;
+	int needs_prim_buffer_sync_alloc;
+	unsigned int sizeof_prim;
+	drawcall_callback_t drawcall_callback;
+};
+typedef struct uipt_t uipt_t;
+
+struct ui_line_t
+{
+	ui_vertex_t a, b;
+};
+typedef struct ui_line_t ui_line_t;
+
+void uipt_init(uipt_t* uipt, unsigned int sizeof_prim, drawcall_callback_t drawcall_callback)
+{
+	uipt->block_da_len = 0;
+	uipt->block_da_cap = 0;
+	uipt->block_da_arr = NULL;
+	uipt->prim_da_len = 0;
+	uipt->prim_da_cap = 0;
+	uipt->prim_da_arr = NULL;
+	glGenBuffers(1, &uipt->prim_opengl_buffer_id);
+	glBindBuffer(GL_ARRAY_BUFFER, uipt->prim_opengl_buffer_id);
+	glBufferData(GL_ARRAY_BUFFER, 0, uipt->prim_da_arr, GL_DYNAMIC_DRAW);
+	uipt->needs_prim_buffer_sync = 1;
+	uipt->needs_prim_buffer_sync_alloc = 0;
+	uipt->sizeof_prim = sizeof_prim;
+	uipt->drawcall_callback = drawcall_callback;
+}
+
+unsigned int uipt_alloc_prim_block(uipt_t* uipt, unsigned int len)
+{
+	TYPE_DA_LENGTHEN(uipt->prim_da_len += len, uipt->prim_da_cap, uipt->prim_da_arr,
+		void, uipt->sizeof_prim);
+	unsigned int prim_i = uipt->prim_da_len - len;
+
+	unsigned int block_i;
+	for (block_i = 0; block_i < uipt->block_da_len; block_i++)
+	{
+		if (uipt->block_da_arr[block_i].len == 0)
+		{
+			goto l_block_i_found;
+		}
+	}
+	DA_LENGTHEN(uipt->block_da_len += 1, uipt->block_da_cap, uipt->block_da_arr, uip_block_t);
+	block_i = uipt->block_da_len - 1;
+
+	l_block_i_found:
+	
+	uipt->block_da_arr[block_i].len = len;
+	uipt->block_da_arr[block_i].index = prim_i;
+
+	uipt->needs_prim_buffer_sync_alloc = 1;
+
+	return block_i;
+}
+
+void* uipt_get_prim_block(uipt_t* uipt, unsigned int block_index)
+{
+	return (char*)uipt->prim_da_arr + uipt->block_da_arr[block_index].index * uipt->sizeof_prim;
+}
+
+void uipt_draw(uipt_t* uipt)
+{
+	if (uipt->needs_prim_buffer_sync_alloc)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, uipt->prim_opengl_buffer_id);
+		glBufferData(GL_ARRAY_BUFFER,
+			uipt->prim_da_len * uipt->sizeof_prim, uipt->prim_da_arr,
+			GL_DYNAMIC_DRAW);
+	}
+	else if (uipt->needs_prim_buffer_sync)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, uipt->prim_opengl_buffer_id);
+		glGetBufferSubData(GL_ARRAY_BUFFER, 0,
+			uipt->prim_da_len * uipt->sizeof_prim, uipt->prim_da_arr);
+	}
+	uipt->needs_prim_buffer_sync_alloc = 0;
+	uipt->needs_prim_buffer_sync = 0;
+
+	uipt->drawcall_callback(uipt->prim_opengl_buffer_id, uipt->prim_da_len);
+}
+
+void line_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count)
+{
+	#define ATTRIB_LOCATION_POS 0
+	#define ATTRIB_LOCATION_COLOR 1
+
+	glViewport(800, 0, 800, 800);
+	glUseProgram(g_shprog_draw_ui_simple);
+	glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
+	glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+
+	glBindBuffer(GL_ARRAY_BUFFER, opengl_buffer_id);
+	glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
+		GL_FALSE, sizeof(ui_vertex_t),
+		(void*)offsetof(ui_vertex_t, x));
+	glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
+		GL_FALSE, sizeof(ui_vertex_t),
+		(void*)offsetof(ui_vertex_t, r));
+	glDrawArrays(GL_LINES, 0, prim_count * 2);
+	
+	glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
+	glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+	glUseProgram(0);
+
+	#undef ATTRIB_LOCATION_POS
+	#undef ATTRIB_LOCATION_COLOR
+}
+
 int main(int argc, const char** argv)
 {
 	l_beginning:;
@@ -333,6 +494,22 @@ int main(int argc, const char** argv)
 	glBufferData(GL_ARRAY_BUFFER, sizeof univ_full_rect_array,
 		univ_full_rect_array, GL_STATIC_DRAW);
 
+	/* Ui primitive tables setup. */
+
+	uipt_t ui_line_table;
+	uipt_init(&ui_line_table, sizeof(ui_line_t), line_drawcall_callback);
+
+	unsigned int block_index = uipt_alloc_prim_block(&ui_line_table, 4);
+	ui_line_t* line_block = uipt_get_prim_block(&ui_line_table, block_index);
+	line_block[0].a = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[0].b = (ui_vertex_t){.x = 600.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[1].a = (ui_vertex_t){.x = 600.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[1].b = (ui_vertex_t){.x = 600.5f, .y = 600.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[2].a = (ui_vertex_t){.x = 600.5f, .y = 600.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[2].b = (ui_vertex_t){.x = 200.5f, .y = 600.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[3].a = (ui_vertex_t){.x = 200.5f, .y = 600.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[3].b = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+
 	/* Font and text setup. */
 
 	#define FONT_TEXTURE_SIDE 256
@@ -372,8 +549,18 @@ int main(int argc, const char** argv)
 	gchar_maximum_number = 16;
 	gchar_number = 0;
 	gchar_array = calloc(gchar_maximum_number, sizeof(gchar_t));
-	gchar_t* new_gchar = &gchar_array[gchar_number++];
+	gchar_t* new_gchar;
+	new_gchar = &gchar_array[gchar_number++];
 	new_gchar->x = (((6.0f))/800.0f)*2.0f-1.0f;
+	new_gchar->y = ((800.0f-(49.0f))/800.0f)*2.0f-1.0f;
+	new_gchar->w = 0.08f;
+	new_gchar->h = 0.08f;
+	new_gchar->font_x = 0.0f;
+	new_gchar->font_y = 0.0f;
+	new_gchar->font_w = 0.1f;
+	new_gchar->font_h = 0.1f;
+	new_gchar = &gchar_array[gchar_number++];
+	new_gchar->x = (((6.0f + 8.0f))/800.0f)*2.0f-1.0f;
 	new_gchar->y = ((800.0f-(49.0f))/800.0f)*2.0f-1.0f;
 	new_gchar->w = 0.08f;
 	new_gchar->h = 0.08f;
@@ -772,6 +959,10 @@ int main(int argc, const char** argv)
 
 			#undef ATTRIB_LOCATION_POS
 			#undef ATTRIB_LOCATION_COLOR
+		}
+
+		{
+			uipt_draw(&ui_line_table);
 		}
 
 		/* Text test. */
