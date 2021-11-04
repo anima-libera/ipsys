@@ -58,13 +58,18 @@ def cmdline_has_option(expects_value, *option_names):
 		if option_name in option_names:
 			if expects_value and len(option_value) == 0:
 				print_error("Cmdline",
-					f"Argument option \"{option_name}\" expects a value.")
+					f"Argument option \"{option_name}\" expects a value " +
+					f"given via the \"{option_name}=value\" syntax.")
+				value = None
 			elif not expects_value and len(option_value) == 1:
 				print_error("Cmdline",
 					f"Argument option \"{option_name}\" " +
 					"doesn't expect a value.")
+			elif expects_value and len(option_value) == 1:
+				value = option_value[0]
+			else:
+				value = True
 			found = option
-			value = option_value[0] if len(option_value) == 1 else True
 			break
 	if found == None:
 		return None if expects_value else False

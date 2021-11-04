@@ -49,16 +49,6 @@ struct gchar_t
 };
 typedef struct gchar_t gchar_t;
 
-/* An OpenGL buffer of graphical characters. */
-struct text_layer_t
-{
-	unsigned int gchar_maximum_number;
-	unsigned int gchar_number;
-	gchar_t* gchar_array;
-	GLuint buf_gchars_id;
-};
-typedef struct text_layer_t text_layer_t;
-
 #if 0
 enum widget_type_t
 {
@@ -110,7 +100,8 @@ struct uipt_t
 	unsigned int prim_da_cap;
 	void* prim_da_arr;
 	GLuint prim_opengl_buffer_id;
-	int needs_prim_buffer_sync;
+	unsigned int needs_prim_buffer_sync_inf;
+	unsigned int needs_prim_buffer_sync_sup;
 	int needs_prim_buffer_sync_alloc;
 	unsigned int sizeof_prim;
 	drawcall_callback_t drawcall_callback;
@@ -140,7 +131,8 @@ void uipt_init(uipt_t* uipt, unsigned int sizeof_prim, drawcall_callback_t drawc
 	glGenBuffers(1, &uipt->prim_opengl_buffer_id);
 	glBindBuffer(GL_ARRAY_BUFFER, uipt->prim_opengl_buffer_id);
 	glBufferData(GL_ARRAY_BUFFER, 0, uipt->prim_da_arr, GL_DYNAMIC_DRAW);
-	uipt->needs_prim_buffer_sync = 1;
+	uipt->needs_prim_buffer_sync_inf = 0;
+	uipt->needs_prim_buffer_sync_sup = 0;
 	uipt->needs_prim_buffer_sync_alloc = 0;
 	uipt->sizeof_prim = sizeof_prim;
 	uipt->drawcall_callback = drawcall_callback;
@@ -187,21 +179,42 @@ void uipt_draw(uipt_t* uipt)
 			uipt->prim_da_len * uipt->sizeof_prim, uipt->prim_da_arr,
 			GL_DYNAMIC_DRAW);
 	}
-	else if (uipt->needs_prim_buffer_sync)
+	else if (uipt->needs_prim_buffer_sync_sup > 0)
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, uipt->prim_opengl_buffer_id);
-		glBufferSubData(GL_ARRAY_BUFFER, 0,
-			uipt->prim_da_len * uipt->sizeof_prim, uipt->prim_da_arr);
+		glBufferSubData(GL_ARRAY_BUFFER,
+			uipt->needs_prim_buffer_sync_inf * uipt->sizeof_prim,
+			(uipt->needs_prim_buffer_sync_sup + 1 - uipt->needs_prim_buffer_sync_inf) * uipt->sizeof_prim,
+			uipt->prim_da_arr);
 	}
 	uipt->needs_prim_buffer_sync_alloc = 0;
-	uipt->needs_prim_buffer_sync = 0;
+	uipt->needs_prim_buffer_sync_inf = 0;
+	uipt->needs_prim_buffer_sync_sup = 0;
 
 	uipt->drawcall_callback(uipt->prim_opengl_buffer_id, uipt->prim_da_len);
 }
 
-void uipt_needs_sync(uipt_t* uipt)
+void uipt_needs_sync(uipt_t* uipt, unsigned int block_index)
 {
-	uipt->needs_prim_buffer_sync = 1;
+	unsigned int inf = uipt->block_da_arr[block_index].index;
+	unsigned int sup = inf + uipt->block_da_arr[block_index].len - 1;
+
+	if (uipt->needs_prim_buffer_sync_sup == 0)
+	{
+		uipt->needs_prim_buffer_sync_inf = inf;
+		uipt->needs_prim_buffer_sync_sup = sup;
+	}
+	else
+	{
+		if (uipt->needs_prim_buffer_sync_inf > inf)
+		{
+			uipt->needs_prim_buffer_sync_inf = inf;
+		}
+		if (uipt->needs_prim_buffer_sync_sup < sup)
+		{
+			uipt->needs_prim_buffer_sync_sup = sup;
+		}
+	}
 }
 
 void line_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count)
@@ -271,7 +284,7 @@ int main(int argc, const char** argv)
 	{
 		if (strcmp(argv[i], "-d") == 0)
 		{
-			assert(0);
+			//assert(0);
 		}
 		else if (strcmp(argv[i], "-f") == 0)
 		{
@@ -562,24 +575,61 @@ int main(int argc, const char** argv)
 
 	#define FONT_TEXTURE_SIDE 256
 	unsigned char* font_texture_data = calloc(FONT_TEXTURE_SIDE * FONT_TEXTURE_SIDE, 1);
-	font_texture_data[2 + 16 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[1 + 15 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[3 + 15 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[0 + 14 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[4 + 14 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[0 + 13 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[4 + 13 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[0 + 12 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[1 + 12 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[2 + 12 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[3 + 12 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[4 + 12 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[0 + 11 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[4 + 11 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[0 + 10 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[4 + 10 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[0 +  9 * FONT_TEXTURE_SIDE] = 255;
-	font_texture_data[4 +  9 * FONT_TEXTURE_SIDE] = 255;
+
+	unsigned int char_x, char_y;
+	#define PAINT(x_, y_, v_) \
+		font_texture_data[(char_x + (x_)) + (char_y + (y_)) * FONT_TEXTURE_SIDE] = (v_)
+
+	unsigned int line_i;
+	#define LINE_5(a_, b_, c_, d_, e_) \
+		do \
+		{ \
+			PAINT(0, line_i, a_); \
+			PAINT(1, line_i, b_); \
+			PAINT(2, line_i, c_); \
+			PAINT(3, line_i, d_); \
+			PAINT(4, line_i, e_); \
+			line_i--; \
+		} \
+		while (0)
+	
+	#define W 255
+	#define _ 0
+
+	char_x = 0; char_y = 0; line_i = 7;
+	LINE_5(_,_,W,_,_);
+	LINE_5(_,W,_,W,_);
+	LINE_5(W,_,_,_,W);
+	LINE_5(W,_,_,_,W);
+	LINE_5(W,W,W,W,W);
+	LINE_5(W,_,_,_,W);
+	LINE_5(W,_,_,_,W);
+	LINE_5(W,_,_,_,W);
+
+	char_x = 5; char_y = 0; line_i = 7;
+	LINE_5(W,W,W,W,_);
+	LINE_5(W,_,_,_,W);
+	LINE_5(W,_,_,_,W);
+	LINE_5(W,W,W,W,_);
+	LINE_5(W,_,_,_,W);
+	LINE_5(W,_,_,_,W);
+	LINE_5(W,_,_,_,W);
+	LINE_5(W,W,W,W,_);
+
+	char_x = 10; char_y = 0; line_i = 7;
+	LINE_5(_,W,W,W,_);
+	LINE_5(W,_,_,_,W);
+	LINE_5(W,_,_,_,_);
+	LINE_5(W,_,_,_,_);
+	LINE_5(W,_,_,_,_);
+	LINE_5(W,_,_,_,_);
+	LINE_5(W,_,_,_,W);
+	LINE_5(_,W,W,W,_);
+
+	#undef W
+	#undef _
+	#undef LINE_5
+	#undef PAINT
 
 	GLuint font_texture_id;
 	glGenTextures(1, &font_texture_id);
@@ -594,28 +644,44 @@ int main(int argc, const char** argv)
 	gchar_t* gchar_array;
 	GLuint buf_gchars_id;
 
-	gchar_maximum_number = 16;
+	gchar_maximum_number = 32;
 	gchar_number = 0;
 	gchar_array = calloc(gchar_maximum_number, sizeof(gchar_t));
 	gchar_t* new_gchar;
+
 	new_gchar = &gchar_array[gchar_number++];
+	assert(gchar_number <= gchar_maximum_number);
 	new_gchar->x = (((6.0f))/800.0f)*2.0f-1.0f;
-	new_gchar->y = ((800.0f-(49.0f))/800.0f)*2.0f-1.0f;
-	new_gchar->w = 0.08f;
-	new_gchar->h = 0.08f;
-	new_gchar->font_x = 0.0f;
-	new_gchar->font_y = 0.0f;
-	new_gchar->font_w = 0.1f;
-	new_gchar->font_h = 0.1f;
+	new_gchar->y = ((800.0f-(80.0f))/800.0f)*2.0f-1.0f;
+	new_gchar->w = (((5.0f))/800.0f)*2.0f;
+	new_gchar->h = (((8.0f))/800.0f)*2.0f;
+	new_gchar->font_x = (float)0 / (float)FONT_TEXTURE_SIDE;
+	new_gchar->font_y = (float)0 / (float)FONT_TEXTURE_SIDE;
+	new_gchar->font_w = (float)5 / (float)FONT_TEXTURE_SIDE;
+	new_gchar->font_h = (float)8 / (float)FONT_TEXTURE_SIDE;
+
 	new_gchar = &gchar_array[gchar_number++];
-	new_gchar->x = (((6.0f + 8.0f))/800.0f)*2.0f-1.0f;
-	new_gchar->y = ((800.0f-(49.0f))/800.0f)*2.0f-1.0f;
-	new_gchar->w = 0.08f;
-	new_gchar->h = 0.08f;
-	new_gchar->font_x = 0.0f;
-	new_gchar->font_y = 0.0f;
-	new_gchar->font_w = 0.1f;
-	new_gchar->font_h = 0.1f;
+	assert(gchar_number <= gchar_maximum_number);
+	new_gchar->x = (((6.0f)+6.0f)/800.0f)*2.0f-1.0f;
+	new_gchar->y = ((800.0f-(80.0f))/800.0f)*2.0f-1.0f;
+	new_gchar->w = (((5.0f))/800.0f)*2.0f;
+	new_gchar->h = (((8.0f))/800.0f)*2.0f;
+	new_gchar->font_x = (float)5 / (float)FONT_TEXTURE_SIDE;
+	new_gchar->font_y = (float)0 / (float)FONT_TEXTURE_SIDE;
+	new_gchar->font_w = (float)5 / (float)FONT_TEXTURE_SIDE;
+	new_gchar->font_h = (float)8 / (float)FONT_TEXTURE_SIDE;
+
+	new_gchar = &gchar_array[gchar_number++];
+	assert(gchar_number <= gchar_maximum_number);
+	new_gchar->x = (((6.0f)+12.0f)/800.0f)*2.0f-1.0f;
+	new_gchar->y = ((800.0f-(80.0f))/800.0f)*2.0f-1.0f;
+	new_gchar->w = (((5.0f))/800.0f)*2.0f;
+	new_gchar->h = (((8.0f))/800.0f)*2.0f;
+	new_gchar->font_x = (float)10 / (float)FONT_TEXTURE_SIDE;
+	new_gchar->font_y = (float)0 / (float)FONT_TEXTURE_SIDE;
+	new_gchar->font_w = (float)5 / (float)FONT_TEXTURE_SIDE;
+	new_gchar->font_h = (float)8 / (float)FONT_TEXTURE_SIDE;
+
 	glGenBuffers(1, &buf_gchars_id);
 	glBindBuffer(GL_ARRAY_BUFFER, buf_gchars_id);
 	glBufferData(GL_ARRAY_BUFFER, gchar_maximum_number * sizeof(gchar_t),
@@ -963,26 +1029,41 @@ int main(int argc, const char** argv)
 		/* Test. */
 		{
 			float v = cosf((float)t * 0.1f);
+			float vv = cosf((float)t * 0.18761f + 0.342567f);
 
 			ui_line_t* line_block = uipt_get_prim_block(&ui_line_table, line_block_index);
-			line_block[0].a.x = 200.5f - 100.0f * v;
-			line_block[0].b.x = 600.5f + 100.0f * v;
-			line_block[1].a.x = 600.5f + 100.0f * v;
-			line_block[1].b.x = 600.5f + 100.0f * v;
-			line_block[2].a.x = 600.5f + 100.0f * v;
-			line_block[2].b.x = 200.5f - 100.0f * v;
-			line_block[3].a.x = 200.5f - 100.0f * v;
-			line_block[3].b.x = 200.5f - 100.0f * v;
-			uipt_needs_sync(&ui_line_table);
+			line_block[0].a.x = 200.5f - 4.0f * v;
+			line_block[0].b.x = 600.5f + 4.0f * v;
+			line_block[1].a.x = 600.5f + 4.0f * v;
+			line_block[1].b.x = 600.5f + 4.0f * v;
+			line_block[2].a.x = 600.5f + 4.0f * v;
+			line_block[2].b.x = 200.5f - 4.0f * v;
+			line_block[3].a.x = 200.5f - 4.0f * v;
+			line_block[3].b.x = 200.5f - 4.0f * v;
+			line_block[0].a.y = 200.5f - 4.0f * vv;
+			line_block[0].b.y = 200.5f - 4.0f * vv;
+			line_block[1].a.y = 200.5f - 4.0f * vv;
+			line_block[1].b.y = 600.5f + 4.0f * vv;
+			line_block[2].a.y = 600.5f + 4.0f * vv;
+			line_block[2].b.y = 600.5f + 4.0f * vv;
+			line_block[3].a.y = 600.5f + 4.0f * vv;
+			line_block[3].b.y = 200.5f - 4.0f * vv;
+			uipt_needs_sync(&ui_line_table, line_block_index);
 
 			ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_triangle_table, triangle_block_index);
-			triangle_block[0].a.x = 200.5f - 100.0f * v;
-			triangle_block[0].b.x = 200.5f - 100.0f * v;
-			triangle_block[0].c.x = 600.5f + 100.0f * v;
-			triangle_block[1].a.x = 200.5f - 100.0f * v;
-			triangle_block[1].b.x = 600.5f + 100.0f * v;
-			triangle_block[1].c.x = 600.5f + 100.0f * v;
-			uipt_needs_sync(&ui_triangle_table);
+			triangle_block[0].a.x = 200.5f - 4.0f * v;
+			triangle_block[0].b.x = 200.5f - 4.0f * v;
+			triangle_block[0].c.x = 600.5f + 4.0f * v;
+			triangle_block[1].a.x = 200.5f - 4.0f * v;
+			triangle_block[1].b.x = 600.5f + 4.0f * v;
+			triangle_block[1].c.x = 600.5f + 4.0f * v;
+			triangle_block[0].a.y = 200.5f - 4.0f * vv;
+			triangle_block[0].b.y = 600.5f + 4.0f * vv;
+			triangle_block[0].c.y = 600.5f + 4.0f * vv;
+			triangle_block[1].a.y = 200.5f - 4.0f * vv;
+			triangle_block[1].b.y = 600.5f + 4.0f * vv;
+			triangle_block[1].c.y = 200.5f - 4.0f * vv;
+			uipt_needs_sync(&ui_triangle_table, triangle_block_index);
 		}
 
 		/* Render the UI. */

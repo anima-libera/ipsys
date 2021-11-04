@@ -8,7 +8,7 @@ void main()
 {
 	vec4 font_color = vec4(texture(u_font_texture, g_font_pos));
 	
-	if (font_color.r != 1.0)
+	if (font_color.r < 0.98)
 	{
 		discard;
 	}
