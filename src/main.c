@@ -55,8 +55,6 @@ struct font_t
 };
 typedef struct font_t font_t;
 
-font_t g_font; /* TODO: This being global, is it a good idea ? */
-
 /* Graphical character, one that is displayed on screen. */
 struct gchar_t
 {
@@ -68,10 +66,10 @@ typedef struct gchar_t gchar_t;
 void gchar_set(gchar_t* gchar, const font_t* font, char c, float x, float y)
 {
 	const font_char_t* fc = &font->char_arr[c - ' '];
-	gchar->rect_ui.x = (x / 800.0f) * 2.0f - 1.0f;
-	gchar->rect_ui.y = ((800.0f - y) / 800.0f) * 2.0f - 1.0f;
-	gchar->rect_ui.w = ((float)fc->w / 800.0f) * 2.0f;
-	gchar->rect_ui.h = ((float)fc->h / 800.0f) * 2.0f;
+	gchar->rect_ui.x = x;//(x / 800.0f) * 2.0f - 1.0f;
+	gchar->rect_ui.y = y;//((800.0f - y) / 800.0f) * 2.0f - 1.0f;
+	gchar->rect_ui.w = (float)fc->w;//((float)fc->w / 800.0f) * 2.0f;
+	gchar->rect_ui.h = (float)fc->h;//((float)fc->h / 800.0f) * 2.0f;
 	gchar->rect_font = fc->rect;
 }
 
@@ -115,7 +113,7 @@ struct uip_block_t
 };
 typedef struct uip_block_t uip_block_t;
 
-typedef void (*drawcall_callback_t)(GLuint opengl_buffer_id, unsigned int prim_count);
+typedef void (*drawcall_callback_t)(GLuint opengl_buffer_id, unsigned int prim_count, void* data);
 
 struct uipt_t
 {
@@ -196,7 +194,7 @@ void* uipt_get_prim_block(uipt_t* uipt, unsigned int block_index)
 	return (char*)uipt->prim_da_arr + uipt->block_da_arr[block_index].index * uipt->sizeof_prim;
 }
 
-void uipt_draw(uipt_t* uipt)
+void uipt_draw(uipt_t* uipt, void* callback_data)
 {
 	if (uipt->needs_prim_buffer_sync_alloc)
 	{
@@ -217,7 +215,7 @@ void uipt_draw(uipt_t* uipt)
 	uipt->needs_prim_buffer_sync_inf = 0;
 	uipt->needs_prim_buffer_sync_sup = 0;
 
-	uipt->drawcall_callback(uipt->prim_opengl_buffer_id, uipt->prim_da_len);
+	uipt->drawcall_callback(uipt->prim_opengl_buffer_id, uipt->prim_da_len, callback_data);
 }
 
 void uipt_needs_sync(uipt_t* uipt, unsigned int block_index)
@@ -243,8 +241,10 @@ void uipt_needs_sync(uipt_t* uipt, unsigned int block_index)
 	}
 }
 
-void line_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count)
+void line_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count, void* unused)
 {
+	(void)unused;
+
 	#define ATTRIB_LOCATION_POS 0
 	#define ATTRIB_LOCATION_COLOR 1
 
@@ -270,8 +270,10 @@ void line_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count)
 	#undef ATTRIB_LOCATION_COLOR
 }
 
-void triangle_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count)
+void triangle_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count, void* unused)
 {
+	(void)unused;
+
 	#define ATTRIB_LOCATION_POS 0
 	#define ATTRIB_LOCATION_COLOR 1
 
@@ -297,10 +299,12 @@ void triangle_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count
 	#undef ATTRIB_LOCATION_COLOR
 }
 
-void gchar_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count)
+void gchar_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count, void* data)
 {
+	font_t* font = data;
+
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, g_font.texture_id);
+	glBindTexture(GL_TEXTURE_2D, font->texture_id);
 	glProgramUniform1i(g_shprog_draw_gchars, 1, 0);
 
 	#define ATTRIB_LOCATION_POS_XYWH 0
@@ -631,22 +635,23 @@ int main(int argc, const char** argv)
 
 	/* Font and text setup. */
 
-	g_font.texture_side = 256;
-	g_font.texture_data = calloc(g_font.texture_side * g_font.texture_side, 1);
+	font_t font;
+	font.texture_side = 256;
+	font.texture_data = calloc(font.texture_side * font.texture_side, 1);
 
 	unsigned int char_x = 0, char_y = 0;
 	#define PAINT(x_, y_, v_) \
-		g_font.texture_data[(char_x + (x_)) + (char_y + (y_)) * g_font.texture_side] = (v_)
+		font.texture_data[(char_x + (x_)) + (char_y + (y_)) * font.texture_side] = (v_)
 
 	unsigned int line_i;
-	#define LINE_5(a_, b_, c_, d_, e_) \
+	#define LINE(...) \
 		do \
 		{ \
-			PAINT(0, line_i, a_); \
-			PAINT(1, line_i, b_); \
-			PAINT(2, line_i, c_); \
-			PAINT(3, line_i, d_); \
-			PAINT(4, line_i, e_); \
+			unsigned char data[] = {__VA_ARGS__}; \
+			for (unsigned int i = 0; i < sizeof data; i++) \
+			{ \
+				PAINT(i, line_i, data[i]); \
+			} \
 			line_i--; \
 		} \
 		while (0)
@@ -660,12 +665,12 @@ int main(int argc, const char** argv)
 		do \
 		{ \
 			_Static_assert(' ' < (c_) && (c_) <= '~', "Invalid character"); \
-			g_font.char_arr[(c_) - ' '] = (font_char_t){ \
+			font.char_arr[(c_) - ' '] = (font_char_t){ \
 				.rect = { \
-					.x = (float)char_x / (float)g_font.texture_side, \
-					.y = (float)char_y / (float)g_font.texture_side, \
-					.h = 8.0f / (float)g_font.texture_side, \
-					.w = (float)(w_) / (float)g_font.texture_side \
+					.x = (float)char_x / (float)font.texture_side, \
+					.y = (float)char_y / (float)font.texture_side, \
+					.h = 8.0f / (float)font.texture_side, \
+					.w = (float)(w_) / (float)font.texture_side \
 				}, \
 				.w = (w_), \
 				.h = 8 \
@@ -675,49 +680,302 @@ int main(int argc, const char** argv)
 		while (0)
 
 	CHAR_BEG();
-		LINE_5(_,_,W,_,_);
-		LINE_5(_,W,_,W,_);
-		LINE_5(W,_,_,_,W);
-		LINE_5(W,_,_,_,W);
-		LINE_5(W,W,W,W,W);
-		LINE_5(W,_,_,_,W);
-		LINE_5(W,_,_,_,W);
-		LINE_5(W,_,_,_,W);
+		LINE(_,_,W,_,_);
+		LINE(_,W,_,W,_);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,W,W,W,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
 	CHAR_END('A', 5);
 
 	CHAR_BEG();
-		LINE_5(W,W,W,W,_);
-		LINE_5(W,_,_,_,W);
-		LINE_5(W,_,_,_,W);
-		LINE_5(W,W,W,W,_);
-		LINE_5(W,_,_,_,W);
-		LINE_5(W,_,_,_,W);
-		LINE_5(W,_,_,_,W);
-		LINE_5(W,W,W,W,_);
+		LINE(W,W,W,W,_);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,W,W,W,_);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,W,W,W,_);
 	CHAR_END('B', 5);
 
 	CHAR_BEG();
-		LINE_5(_,W,W,W,_);
-		LINE_5(W,_,_,_,W);
-		LINE_5(W,_,_,_,_);
-		LINE_5(W,_,_,_,_);
-		LINE_5(W,_,_,_,_);
-		LINE_5(W,_,_,_,_);
-		LINE_5(W,_,_,_,W);
-		LINE_5(_,W,W,W,_);
+		LINE(_,W,W,W,_);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,W);
+		LINE(_,W,W,W,_);
 	CHAR_END('C', 5);
+
+	CHAR_BEG();
+		LINE(W,W,W,W,_);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,W,W,W,_);
+	CHAR_END('D', 5);
+
+	CHAR_BEG();
+		LINE(W,W,W,W,W);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,W,W,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,W,W,W,W);
+	CHAR_END('E', 5);
+
+	CHAR_BEG();
+		LINE(W,W,W,W,W);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,W,W,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+	CHAR_END('F', 5);
+
+	CHAR_BEG();
+		LINE(_,W,W,W,_);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,W,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(_,W,W,W,_);
+	CHAR_END('G', 5);
+
+	CHAR_BEG();
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,W,W,W,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+	CHAR_END('H', 5);
+
+	CHAR_BEG();
+		LINE(W);
+		LINE(W);
+		LINE(W);
+		LINE(W);
+		LINE(W);
+		LINE(W);
+		LINE(W);
+		LINE(W);
+	CHAR_END('I', 1);
+
+	CHAR_BEG();
+		LINE(_,_,_,_,W);
+		LINE(_,_,_,_,W);
+		LINE(_,_,_,_,W);
+		LINE(_,_,_,_,W);
+		LINE(_,_,_,_,W);
+		LINE(_,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(_,W,W,W,_);
+	CHAR_END('J', 5);
+
+	CHAR_BEG();
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,W,_);
+		LINE(W,_,W,_,_);
+		LINE(W,W,_,_,_);
+		LINE(W,_,W,_,_);
+		LINE(W,_,W,_,_);
+		LINE(W,_,_,W,_);
+		LINE(W,_,_,_,W);
+	CHAR_END('K', 5);
+
+	CHAR_BEG();
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,W,W,W,W);
+	CHAR_END('L', 5);
+
+	CHAR_BEG();
+		LINE(W,_,_,_,_,_,W);
+		LINE(W,W,_,_,_,W,W);
+		LINE(W,_,W,_,W,_,W);
+		LINE(W,_,_,W,_,_,W);
+		LINE(W,_,_,_,_,_,W);
+		LINE(W,_,_,_,_,_,W);
+		LINE(W,_,_,_,_,_,W);
+		LINE(W,_,_,_,_,_,W);
+	CHAR_END('M', 7);
+
+	CHAR_BEG();
+		LINE(W,_,_,_,_,W);
+		LINE(W,W,_,_,_,W);
+		LINE(W,_,W,_,_,W);
+		LINE(W,_,W,_,_,W);
+		LINE(W,_,_,W,_,W);
+		LINE(W,_,_,W,_,W);
+		LINE(W,_,_,_,W,W);
+		LINE(W,_,_,_,_,W);
+	CHAR_END('N', 6);
+
+	CHAR_BEG();
+		LINE(_,W,W,W,_);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(_,W,W,W,_);
+	CHAR_END('O', 5);
+
+	CHAR_BEG();
+		LINE(W,W,W,W,_);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,W,W,W,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+	CHAR_END('P', 5);
+
+	CHAR_BEG();
+		LINE(_,W,W,W,_,_);
+		LINE(W,_,_,_,W,_);
+		LINE(W,_,_,_,W,_);
+		LINE(W,_,_,_,W,_);
+		LINE(W,_,_,_,W,_);
+		LINE(W,_,_,W,W,_);
+		LINE(W,_,_,_,W,_);
+		LINE(_,W,W,W,_,W);
+	CHAR_END('Q', 6);
+
+	CHAR_BEG();
+		LINE(W,W,W,W,_);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,W,W,W,_);
+		LINE(W,_,W,_,_);
+		LINE(W,_,_,W,_);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+	CHAR_END('R', 5);
+
+	CHAR_BEG();
+		LINE(_,W,W,W,_);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,_);
+		LINE(_,W,W,W,_);
+		LINE(_,_,_,_,W);
+		LINE(_,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(_,W,W,W,_);
+	CHAR_END('S', 5);
+
+	CHAR_BEG();
+		LINE(W,W,W,W,W);
+		LINE(_,_,W,_,_);
+		LINE(_,_,W,_,_);
+		LINE(_,_,W,_,_);
+		LINE(_,_,W,_,_);
+		LINE(_,_,W,_,_);
+		LINE(_,_,W,_,_);
+		LINE(_,_,W,_,_);
+	CHAR_END('T', 5);
+
+	CHAR_BEG();
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(_,W,W,W,_);
+	CHAR_END('U', 5);
+
+	CHAR_BEG();
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(_,W,_,W,_);
+		LINE(_,W,_,W,_);
+		LINE(_,_,W,_,_);
+	CHAR_END('V', 5);
+
+	CHAR_BEG();
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(W,_,W,_,W);
+		LINE(W,_,W,_,W);
+		LINE(_,W,_,W,_);
+		LINE(_,W,_,W,_);
+	CHAR_END('W', 5);
+
+	CHAR_BEG();
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(_,W,_,W,_);
+		LINE(_,_,W,_,_);
+		LINE(_,_,W,_,_);
+		LINE(_,W,_,W,_);
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+	CHAR_END('X', 5);
+
+	CHAR_BEG();
+		LINE(W,_,_,_,W);
+		LINE(W,_,_,_,W);
+		LINE(_,W,_,W,_);
+		LINE(_,_,W,_,_);
+		LINE(_,_,W,_,_);
+		LINE(_,_,W,_,_);
+		LINE(_,_,W,_,_);
+		LINE(_,_,W,_,_);
+	CHAR_END('Y', 5);
+
+	CHAR_BEG();
+		LINE(W,W,W,W,W);
+		LINE(_,_,_,_,W);
+		LINE(_,_,_,W,_);
+		LINE(_,_,W,_,_);
+		LINE(_,W,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,_,_,_,_);
+		LINE(W,W,W,W,W);
+	CHAR_END('Z', 5);
 
 	#undef CHAR_BEG
 	#undef CHAR_END
 	#undef W
 	#undef _
-	#undef LINE_5
+	#undef LINE
 	#undef PAINT
 
-	glGenTextures(1, &g_font.texture_id);
-	glBindTexture(GL_TEXTURE_2D, g_font.texture_id);
+	glGenTextures(1, &font.texture_id);
+	glBindTexture(GL_TEXTURE_2D, font.texture_id);
 	glTexImage2D(GL_TEXTURE_2D,
-		0, GL_RED, g_font.texture_side, g_font.texture_side, 0, GL_RED, GL_UNSIGNED_BYTE, g_font.texture_data);
+		0, GL_RED, font.texture_side, font.texture_side, 0, GL_RED, GL_UNSIGNED_BYTE, font.texture_data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
@@ -725,10 +983,20 @@ int main(int argc, const char** argv)
 	uipt_init(&ui_gchar_table, sizeof(gchar_t), gchar_drawcall_callback);
 	unsigned int gchar_block_index = uipt_alloc_prim_block(&ui_gchar_table, 4);
 	gchar_t* gchar_block = uipt_get_prim_block(&ui_gchar_table, gchar_block_index);
-	gchar_set(&gchar_block[0], &g_font, 'A', 20.0f + 0.0f * 6.0f, 80.0f);
-	gchar_set(&gchar_block[1], &g_font, 'B', 20.0f + 1.0f * 6.0f, 80.0f);
-	gchar_set(&gchar_block[2], &g_font, 'C', 20.0f + 2.0f * 6.0f, 80.0f);
-	gchar_set(&gchar_block[3], &g_font, 'C', 20.0f + 3.0f * 6.0f, 80.0f);
+	char s[] = "AB CD";
+	float x_offset = 0.0f;
+	unsigned int ii = 0;
+	for (unsigned int i = 0; s[i] != '\0'; i++)
+	{
+		if (s[i] == ' ')
+		{
+			x_offset += 5;
+			continue;
+		}
+		gchar_set(&gchar_block[ii], &font, s[i], 20.0f + x_offset, 80.0f);
+		ii++;
+		x_offset += font.char_arr[s[i] - ' '].w + 1;
+	}
 
 	/* UI setup. */
 
@@ -1086,10 +1354,10 @@ int main(int argc, const char** argv)
 			line_block[0].a.y = 200.5f - 4.0f * vv;
 			line_block[0].b.y = 200.5f - 4.0f * vv;
 			line_block[1].a.y = 200.5f - 4.0f * vv;
-			line_block[1].b.y = 600.5f + 4.0f * vv;
-			line_block[2].a.y = 600.5f + 4.0f * vv;
-			line_block[2].b.y = 600.5f + 4.0f * vv;
-			line_block[3].a.y = 600.5f + 4.0f * vv;
+			line_block[1].b.y = 400.5f + 4.0f * vv;
+			line_block[2].a.y = 400.5f + 4.0f * vv;
+			line_block[2].b.y = 400.5f + 4.0f * vv;
+			line_block[3].a.y = 400.5f + 4.0f * vv;
 			line_block[3].b.y = 200.5f - 4.0f * vv;
 			uipt_needs_sync(&ui_line_table, line_block_index);
 
@@ -1101,18 +1369,18 @@ int main(int argc, const char** argv)
 			triangle_block[1].b.x = 600.5f + 4.0f * v;
 			triangle_block[1].c.x = 600.5f + 4.0f * v;
 			triangle_block[0].a.y = 200.5f - 4.0f * vv;
-			triangle_block[0].b.y = 600.5f + 4.0f * vv;
-			triangle_block[0].c.y = 600.5f + 4.0f * vv;
+			triangle_block[0].b.y = 400.5f + 4.0f * vv;
+			triangle_block[0].c.y = 400.5f + 4.0f * vv;
 			triangle_block[1].a.y = 200.5f - 4.0f * vv;
-			triangle_block[1].b.y = 600.5f + 4.0f * vv;
+			triangle_block[1].b.y = 400.5f + 4.0f * vv;
 			triangle_block[1].c.y = 200.5f - 4.0f * vv;
 			uipt_needs_sync(&ui_triangle_table, triangle_block_index);
 
 			gchar_t* gchar_block = uipt_get_prim_block(&ui_gchar_table, gchar_block_index);
-			gchar_set(&gchar_block[0], &g_font, 'A', 20.0f + 0.0f * 6.0f, 80.0f + 4.0f * v);
-			gchar_set(&gchar_block[1], &g_font, 'B', 20.0f + 1.0f * 6.0f, 80.0f + 4.0f * v);
-			gchar_set(&gchar_block[2], &g_font, 'C', 20.0f + 2.0f * 6.0f, 80.0f + 4.0f * v);
-			gchar_set(&gchar_block[3], &g_font, 'C', 20.0f + 3.0f * 6.0f, 80.0f + 4.0f * v);
+			gchar_block[0].rect_ui.y = 80.0f + 4.0f * v;
+			gchar_block[1].rect_ui.y = 80.0f + 4.0f * v;
+			gchar_block[2].rect_ui.y = 80.0f + 4.0f * v;
+			gchar_block[3].rect_ui.y = 80.0f + 4.0f * v;
 			uipt_needs_sync(&ui_gchar_table, gchar_block_index);
 		}
 
@@ -1170,9 +1438,9 @@ int main(int argc, const char** argv)
 
 		/* Test. */
 		{
-			uipt_draw(&ui_triangle_table);
-			uipt_draw(&ui_line_table);
-			uipt_draw(&ui_gchar_table);
+			uipt_draw(&ui_triangle_table, NULL);
+			uipt_draw(&ui_line_table, NULL);
+			uipt_draw(&ui_gchar_table, &font);
 		}
 
 		/* Fade-to-black effect in the universe. */
