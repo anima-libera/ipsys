@@ -661,7 +661,7 @@ void deserialize_ipsysd_file(const char* src_filepath,
 			}
 			else
 			{
-				assert(type_number * type_number == pst_da->len);
+				assert(type_number * type_number == (int)pst_da->len);
 			}
 			*out_pil_set_table = calloc(type_number * type_number, sizeof(pil_set_t));
 			printf("pil_set_table length: %d\n", type_number * type_number);

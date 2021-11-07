@@ -33,21 +33,47 @@ typedef struct just_vertex_t just_vertex_t;
 SDL_Window* g_window = NULL;
 SDL_GLContext g_opengl_context = NULL;
 
+struct rect_t
+{
+	float x, y, w, h;
+};
+typedef struct rect_t rect_t;
+
+struct font_char_t
+{
+	rect_t rect;
+	unsigned int w, h;
+};
+typedef struct font_char_t font_char_t;
+
 struct font_t
 {
 	unsigned int texture_side;
 	unsigned char* texture_data;
 	GLuint texture_id;
+	font_char_t char_arr['~' - ' '];
 };
 typedef struct font_t font_t;
+
+font_t g_font; /* TODO: This being global, is it a good idea ? */
 
 /* Graphical character, one that is displayed on screen. */
 struct gchar_t
 {
-	float x, y, w, h;
-	float font_x, font_y, font_w, font_h;
+	rect_t rect_ui;
+	rect_t rect_font;
 };
 typedef struct gchar_t gchar_t;
+
+void gchar_set(gchar_t* gchar, const font_t* font, char c, float x, float y)
+{
+	const font_char_t* fc = &font->char_arr[c - ' '];
+	gchar->rect_ui.x = (x / 800.0f) * 2.0f - 1.0f;
+	gchar->rect_ui.y = ((800.0f - y) / 800.0f) * 2.0f - 1.0f;
+	gchar->rect_ui.w = ((float)fc->w / 800.0f) * 2.0f;
+	gchar->rect_ui.h = ((float)fc->h / 800.0f) * 2.0f;
+	gchar->rect_font = fc->rect;
+}
 
 #if 0
 enum widget_type_t
@@ -269,6 +295,38 @@ void triangle_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count
 
 	#undef ATTRIB_LOCATION_POS
 	#undef ATTRIB_LOCATION_COLOR
+}
+
+void gchar_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count)
+{
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, g_font.texture_id);
+	glProgramUniform1i(g_shprog_draw_gchars, 1, 0);
+
+	#define ATTRIB_LOCATION_POS_XYWH 0
+	#define ATTRIB_LOCATION_FONT_XYWH 1
+
+	glViewport(800, 0, 800, 800);
+	glUseProgram(g_shprog_draw_gchars);
+	glEnableVertexAttribArray(ATTRIB_LOCATION_POS_XYWH);
+	glEnableVertexAttribArray(ATTRIB_LOCATION_FONT_XYWH);
+
+	glProgramUniform1f(g_shprog_draw_gchars, 0, 1.0f); /* Aspect ratio. */
+	
+	glBindBuffer(GL_ARRAY_BUFFER, opengl_buffer_id);
+	glVertexAttribPointer(ATTRIB_LOCATION_POS_XYWH, 4, GL_FLOAT,
+		GL_FALSE, sizeof(gchar_t), (void*)offsetof(gchar_t, rect_ui));
+	glVertexAttribPointer(ATTRIB_LOCATION_FONT_XYWH, 4, GL_FLOAT,
+		GL_FALSE, sizeof(gchar_t), (void*)offsetof(gchar_t, rect_font));
+
+	glDrawArrays(GL_POINTS, 0, prim_count);
+	
+	glDisableVertexAttribArray(ATTRIB_LOCATION_POS_XYWH);
+	glDisableVertexAttribArray(ATTRIB_LOCATION_FONT_XYWH);
+	glUseProgram(0);
+
+	#undef ATTRIB_LOCATION_POS_XYWH
+	#undef ATTRIB_LOCATION_FONT_XYWH
 }
 
 int main(int argc, const char** argv)
@@ -573,12 +631,12 @@ int main(int argc, const char** argv)
 
 	/* Font and text setup. */
 
-	#define FONT_TEXTURE_SIDE 256
-	unsigned char* font_texture_data = calloc(FONT_TEXTURE_SIDE * FONT_TEXTURE_SIDE, 1);
+	g_font.texture_side = 256;
+	g_font.texture_data = calloc(g_font.texture_side * g_font.texture_side, 1);
 
-	unsigned int char_x, char_y;
+	unsigned int char_x = 0, char_y = 0;
 	#define PAINT(x_, y_, v_) \
-		font_texture_data[(char_x + (x_)) + (char_y + (y_)) * FONT_TEXTURE_SIDE] = (v_)
+		g_font.texture_data[(char_x + (x_)) + (char_y + (y_)) * g_font.texture_side] = (v_)
 
 	unsigned int line_i;
 	#define LINE_5(a_, b_, c_, d_, e_) \
@@ -596,96 +654,81 @@ int main(int argc, const char** argv)
 	#define W 255
 	#define _ 0
 
-	char_x = 0; char_y = 0; line_i = 7;
-	LINE_5(_,_,W,_,_);
-	LINE_5(_,W,_,W,_);
-	LINE_5(W,_,_,_,W);
-	LINE_5(W,_,_,_,W);
-	LINE_5(W,W,W,W,W);
-	LINE_5(W,_,_,_,W);
-	LINE_5(W,_,_,_,W);
-	LINE_5(W,_,_,_,W);
+	#define CHAR_BEG() \
+		line_i = 7
+	#define CHAR_END(c_, w_) \
+		do \
+		{ \
+			_Static_assert(' ' < (c_) && (c_) <= '~', "Invalid character"); \
+			g_font.char_arr[(c_) - ' '] = (font_char_t){ \
+				.rect = { \
+					.x = (float)char_x / (float)g_font.texture_side, \
+					.y = (float)char_y / (float)g_font.texture_side, \
+					.h = 8.0f / (float)g_font.texture_side, \
+					.w = (float)(w_) / (float)g_font.texture_side \
+				}, \
+				.w = (w_), \
+				.h = 8 \
+			}; \
+			char_x += (w_); \
+		} \
+		while (0)
 
-	char_x = 5; char_y = 0; line_i = 7;
-	LINE_5(W,W,W,W,_);
-	LINE_5(W,_,_,_,W);
-	LINE_5(W,_,_,_,W);
-	LINE_5(W,W,W,W,_);
-	LINE_5(W,_,_,_,W);
-	LINE_5(W,_,_,_,W);
-	LINE_5(W,_,_,_,W);
-	LINE_5(W,W,W,W,_);
+	CHAR_BEG();
+		LINE_5(_,_,W,_,_);
+		LINE_5(_,W,_,W,_);
+		LINE_5(W,_,_,_,W);
+		LINE_5(W,_,_,_,W);
+		LINE_5(W,W,W,W,W);
+		LINE_5(W,_,_,_,W);
+		LINE_5(W,_,_,_,W);
+		LINE_5(W,_,_,_,W);
+	CHAR_END('A', 5);
 
-	char_x = 10; char_y = 0; line_i = 7;
-	LINE_5(_,W,W,W,_);
-	LINE_5(W,_,_,_,W);
-	LINE_5(W,_,_,_,_);
-	LINE_5(W,_,_,_,_);
-	LINE_5(W,_,_,_,_);
-	LINE_5(W,_,_,_,_);
-	LINE_5(W,_,_,_,W);
-	LINE_5(_,W,W,W,_);
+	CHAR_BEG();
+		LINE_5(W,W,W,W,_);
+		LINE_5(W,_,_,_,W);
+		LINE_5(W,_,_,_,W);
+		LINE_5(W,W,W,W,_);
+		LINE_5(W,_,_,_,W);
+		LINE_5(W,_,_,_,W);
+		LINE_5(W,_,_,_,W);
+		LINE_5(W,W,W,W,_);
+	CHAR_END('B', 5);
 
+	CHAR_BEG();
+		LINE_5(_,W,W,W,_);
+		LINE_5(W,_,_,_,W);
+		LINE_5(W,_,_,_,_);
+		LINE_5(W,_,_,_,_);
+		LINE_5(W,_,_,_,_);
+		LINE_5(W,_,_,_,_);
+		LINE_5(W,_,_,_,W);
+		LINE_5(_,W,W,W,_);
+	CHAR_END('C', 5);
+
+	#undef CHAR_BEG
+	#undef CHAR_END
 	#undef W
 	#undef _
 	#undef LINE_5
 	#undef PAINT
 
-	GLuint font_texture_id;
-	glGenTextures(1, &font_texture_id);
-	glBindTexture(GL_TEXTURE_2D, font_texture_id);
+	glGenTextures(1, &g_font.texture_id);
+	glBindTexture(GL_TEXTURE_2D, g_font.texture_id);
 	glTexImage2D(GL_TEXTURE_2D,
-		0, GL_RED, FONT_TEXTURE_SIDE, FONT_TEXTURE_SIDE, 0, GL_RED, GL_UNSIGNED_BYTE, font_texture_data);
+		0, GL_RED, g_font.texture_side, g_font.texture_side, 0, GL_RED, GL_UNSIGNED_BYTE, g_font.texture_data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	unsigned int gchar_maximum_number;
-	unsigned int gchar_number;
-	gchar_t* gchar_array;
-	GLuint buf_gchars_id;
-
-	gchar_maximum_number = 32;
-	gchar_number = 0;
-	gchar_array = calloc(gchar_maximum_number, sizeof(gchar_t));
-	gchar_t* new_gchar;
-
-	new_gchar = &gchar_array[gchar_number++];
-	assert(gchar_number <= gchar_maximum_number);
-	new_gchar->x = (((6.0f))/800.0f)*2.0f-1.0f;
-	new_gchar->y = ((800.0f-(80.0f))/800.0f)*2.0f-1.0f;
-	new_gchar->w = (((5.0f))/800.0f)*2.0f;
-	new_gchar->h = (((8.0f))/800.0f)*2.0f;
-	new_gchar->font_x = (float)0 / (float)FONT_TEXTURE_SIDE;
-	new_gchar->font_y = (float)0 / (float)FONT_TEXTURE_SIDE;
-	new_gchar->font_w = (float)5 / (float)FONT_TEXTURE_SIDE;
-	new_gchar->font_h = (float)8 / (float)FONT_TEXTURE_SIDE;
-
-	new_gchar = &gchar_array[gchar_number++];
-	assert(gchar_number <= gchar_maximum_number);
-	new_gchar->x = (((6.0f)+6.0f)/800.0f)*2.0f-1.0f;
-	new_gchar->y = ((800.0f-(80.0f))/800.0f)*2.0f-1.0f;
-	new_gchar->w = (((5.0f))/800.0f)*2.0f;
-	new_gchar->h = (((8.0f))/800.0f)*2.0f;
-	new_gchar->font_x = (float)5 / (float)FONT_TEXTURE_SIDE;
-	new_gchar->font_y = (float)0 / (float)FONT_TEXTURE_SIDE;
-	new_gchar->font_w = (float)5 / (float)FONT_TEXTURE_SIDE;
-	new_gchar->font_h = (float)8 / (float)FONT_TEXTURE_SIDE;
-
-	new_gchar = &gchar_array[gchar_number++];
-	assert(gchar_number <= gchar_maximum_number);
-	new_gchar->x = (((6.0f)+12.0f)/800.0f)*2.0f-1.0f;
-	new_gchar->y = ((800.0f-(80.0f))/800.0f)*2.0f-1.0f;
-	new_gchar->w = (((5.0f))/800.0f)*2.0f;
-	new_gchar->h = (((8.0f))/800.0f)*2.0f;
-	new_gchar->font_x = (float)10 / (float)FONT_TEXTURE_SIDE;
-	new_gchar->font_y = (float)0 / (float)FONT_TEXTURE_SIDE;
-	new_gchar->font_w = (float)5 / (float)FONT_TEXTURE_SIDE;
-	new_gchar->font_h = (float)8 / (float)FONT_TEXTURE_SIDE;
-
-	glGenBuffers(1, &buf_gchars_id);
-	glBindBuffer(GL_ARRAY_BUFFER, buf_gchars_id);
-	glBufferData(GL_ARRAY_BUFFER, gchar_maximum_number * sizeof(gchar_t),
-		gchar_array, GL_DYNAMIC_DRAW);
+	uipt_t ui_gchar_table;
+	uipt_init(&ui_gchar_table, sizeof(gchar_t), gchar_drawcall_callback);
+	unsigned int gchar_block_index = uipt_alloc_prim_block(&ui_gchar_table, 4);
+	gchar_t* gchar_block = uipt_get_prim_block(&ui_gchar_table, gchar_block_index);
+	gchar_set(&gchar_block[0], &g_font, 'A', 20.0f + 0.0f * 6.0f, 80.0f);
+	gchar_set(&gchar_block[1], &g_font, 'B', 20.0f + 1.0f * 6.0f, 80.0f);
+	gchar_set(&gchar_block[2], &g_font, 'C', 20.0f + 2.0f * 6.0f, 80.0f);
+	gchar_set(&gchar_block[3], &g_font, 'C', 20.0f + 3.0f * 6.0f, 80.0f);
 
 	/* UI setup. */
 
@@ -1064,6 +1107,13 @@ int main(int argc, const char** argv)
 			triangle_block[1].b.y = 600.5f + 4.0f * vv;
 			triangle_block[1].c.y = 200.5f - 4.0f * vv;
 			uipt_needs_sync(&ui_triangle_table, triangle_block_index);
+
+			gchar_t* gchar_block = uipt_get_prim_block(&ui_gchar_table, gchar_block_index);
+			gchar_set(&gchar_block[0], &g_font, 'A', 20.0f + 0.0f * 6.0f, 80.0f + 4.0f * v);
+			gchar_set(&gchar_block[1], &g_font, 'B', 20.0f + 1.0f * 6.0f, 80.0f + 4.0f * v);
+			gchar_set(&gchar_block[2], &g_font, 'C', 20.0f + 2.0f * 6.0f, 80.0f + 4.0f * v);
+			gchar_set(&gchar_block[3], &g_font, 'C', 20.0f + 3.0f * 6.0f, 80.0f + 4.0f * v);
+			uipt_needs_sync(&ui_gchar_table, gchar_block_index);
 		}
 
 		/* Render the UI. */
@@ -1122,39 +1172,7 @@ int main(int argc, const char** argv)
 		{
 			uipt_draw(&ui_triangle_table);
 			uipt_draw(&ui_line_table);
-		}
-
-		/* Text test. */
-		if (gchar_number > 0)
-		{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, font_texture_id);
-			glProgramUniform1i(g_shprog_draw_gchars, 1, 0);
-	
-			#define ATTRIB_LOCATION_POS_XYWH 0
-			#define ATTRIB_LOCATION_FONT_XYWH 1
-
-			glViewport(800, 0, 800, 800);
-			glUseProgram(g_shprog_draw_gchars);
-			glEnableVertexAttribArray(ATTRIB_LOCATION_POS_XYWH);
-			glEnableVertexAttribArray(ATTRIB_LOCATION_FONT_XYWH);
-
-			glProgramUniform1f(g_shprog_draw_gchars, 0, 1.0f); /* Aspect ratio. */
-			
-			glBindBuffer(GL_ARRAY_BUFFER, buf_gchars_id);
-			glVertexAttribPointer(ATTRIB_LOCATION_POS_XYWH, 4, GL_FLOAT,
-				GL_FALSE, sizeof(gchar_t), (void*)offsetof(gchar_t, x));
-			glVertexAttribPointer(ATTRIB_LOCATION_FONT_XYWH, 4, GL_FLOAT,
-				GL_FALSE, sizeof(gchar_t), (void*)offsetof(gchar_t, font_x));
-
-			glDrawArrays(GL_POINTS, 0, gchar_number);
-			
-			glDisableVertexAttribArray(ATTRIB_LOCATION_POS_XYWH);
-			glDisableVertexAttribArray(ATTRIB_LOCATION_FONT_XYWH);
-			glUseProgram(0);
-
-			#undef ATTRIB_LOCATION_POS_XYWH
-			#undef ATTRIB_LOCATION_FONT_XYWH
+			uipt_draw(&ui_gchar_table);
 		}
 
 		/* Fade-to-black effect in the universe. */
