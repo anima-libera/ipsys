@@ -180,7 +180,7 @@ unsigned int uipt_alloc_prim_block(uipt_t* uipt, unsigned int len)
 	block_i = uipt->block_da_len - 1;
 
 	l_block_i_found:
-	
+
 	uipt->block_da_arr[block_i].len = len;
 	uipt->block_da_arr[block_i].index = prim_i;
 
@@ -192,6 +192,11 @@ unsigned int uipt_alloc_prim_block(uipt_t* uipt, unsigned int len)
 void* uipt_get_prim_block(uipt_t* uipt, unsigned int block_index)
 {
 	return (char*)uipt->prim_da_arr + uipt->block_da_arr[block_index].index * uipt->sizeof_prim;
+}
+
+unsigned int uipt_get_block_len(uipt_t* uipt, unsigned int block_index)
+{
+	return uipt->block_da_arr[block_index].len;
 }
 
 void uipt_draw(uipt_t* uipt, void* callback_data)
@@ -261,7 +266,7 @@ void line_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count, vo
 		GL_FALSE, sizeof(ui_vertex_t),
 		(void*)offsetof(ui_vertex_t, r));
 	glDrawArrays(GL_LINES, 0, prim_count * 2);
-	
+
 	glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
 	glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
 	glUseProgram(0);
@@ -290,7 +295,7 @@ void triangle_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count
 		GL_FALSE, sizeof(ui_vertex_t),
 		(void*)offsetof(ui_vertex_t, r));
 	glDrawArrays(GL_TRIANGLES, 0, prim_count * 3);
-	
+
 	glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
 	glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
 	glUseProgram(0);
@@ -316,7 +321,7 @@ void gchar_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count, v
 	glEnableVertexAttribArray(ATTRIB_LOCATION_FONT_XYWH);
 
 	glProgramUniform1f(g_shprog_draw_gchars, 0, 1.0f); /* Aspect ratio. */
-	
+
 	glBindBuffer(GL_ARRAY_BUFFER, opengl_buffer_id);
 	glVertexAttribPointer(ATTRIB_LOCATION_POS_XYWH, 4, GL_FLOAT,
 		GL_FALSE, sizeof(gchar_t), (void*)offsetof(gchar_t, rect_ui));
@@ -324,7 +329,7 @@ void gchar_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count, v
 		GL_FALSE, sizeof(gchar_t), (void*)offsetof(gchar_t, rect_font));
 
 	glDrawArrays(GL_POINTS, 0, prim_count);
-	
+
 	glDisableVertexAttribArray(ATTRIB_LOCATION_POS_XYWH);
 	glDisableVertexAttribArray(ATTRIB_LOCATION_FONT_XYWH);
 	glUseProgram(0);
@@ -655,7 +660,7 @@ int main(int argc, const char** argv)
 			line_i--; \
 		} \
 		while (0)
-	
+
 	#define W 255
 	#define _ 0
 
@@ -981,9 +986,9 @@ int main(int argc, const char** argv)
 
 	uipt_t ui_gchar_table;
 	uipt_init(&ui_gchar_table, sizeof(gchar_t), gchar_drawcall_callback);
-	unsigned int gchar_block_index = uipt_alloc_prim_block(&ui_gchar_table, 4);
+	unsigned int gchar_block_index = uipt_alloc_prim_block(&ui_gchar_table, 18);
 	gchar_t* gchar_block = uipt_get_prim_block(&ui_gchar_table, gchar_block_index);
-	char s[] = "AB CD";
+	char s[] = "COUCOU Y A DU TEXT UWU";
 	float x_offset = 0.0f;
 	unsigned int ii = 0;
 	for (unsigned int i = 0; s[i] != '\0'; i++)
@@ -1376,11 +1381,14 @@ int main(int argc, const char** argv)
 			triangle_block[1].c.y = 200.5f - 4.0f * vv;
 			uipt_needs_sync(&ui_triangle_table, triangle_block_index);
 
+			unsigned int gchar_count = uipt_get_block_len(&ui_gchar_table, gchar_block_index);
 			gchar_t* gchar_block = uipt_get_prim_block(&ui_gchar_table, gchar_block_index);
-			gchar_block[0].rect_ui.y = 80.0f + 4.0f * v;
-			gchar_block[1].rect_ui.y = 80.0f + 4.0f * v;
-			gchar_block[2].rect_ui.y = 80.0f + 4.0f * v;
-			gchar_block[3].rect_ui.y = 80.0f + 4.0f * v;
+			for (unsigned int i = 0; i < gchar_count; i++)
+			{
+				float vvv = cosf((float)t * 0.1f + (float)i * 0.15f);
+				gchar_block[i].rect_ui.y = 80.0f + 4.0f * vvv;
+
+			}
 			uipt_needs_sync(&ui_gchar_table, gchar_block_index);
 		}
 
