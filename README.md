@@ -66,7 +66,7 @@ At runtime, the ways to interact with the simulation and rendering are listed he
   - Better code (with error report, and without vulnerabilities).
 - Changelog and version numbers.
 - Read a config file.
-  - OpenGL version (disable some features if needed).
+  - OpenGL version (disable some features if needed) (support Apple).
   - Set settings.
 - Full screen setting.
 - Wrapping around the edge as a setting.
@@ -79,7 +79,7 @@ At runtime, the ways to interact with the simulation and rendering are listed he
   - Script the action of user-created UI witgets on the rules, rule generators, patricles, colors, etc.
   - Create UI witgets with scripting.
   - A console line can be a witget.
-- Make the build system usable with clang and on Windows.
+- Make the build system usable on Windows.
 - View the "force" fields and motion fields.
 - Display the rules.
 - Better type changing rules and rule generation (using a changing graph).
@@ -116,6 +116,9 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 - Precomile the shaders to SPIR-V or something.
 - Expand the TODO list, it is not long enough xd.
 - Be able to compile without the SDL2 library (use Xorg, Wayland, WinAPI, whatever, but keep SDL2 as an optional dependancy).
+- More types of interaction laws.
+  - Boids-like laws.
+  - Friction laws.
 
 ### Rerwite it in Rust ?
 
