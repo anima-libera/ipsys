@@ -52,6 +52,8 @@ struct font_t
 	unsigned char* texture_data;
 	GLuint texture_id;
 	font_char_t char_arr['~' - ' '];
+	float space_length;
+	float implicit_space_length;
 };
 typedef struct font_t font_t;
 
@@ -65,46 +67,15 @@ typedef struct gchar_t gchar_t;
 
 void gchar_set(gchar_t* gchar, const font_t* font, char c, float x, float y)
 {
+	assert(c > ' ');
 	const font_char_t* fc = &font->char_arr[c - ' '];
-	gchar->rect_ui.x = x;//(x / 800.0f) * 2.0f - 1.0f;
-	gchar->rect_ui.y = y;//((800.0f - y) / 800.0f) * 2.0f - 1.0f;
-	gchar->rect_ui.w = (float)fc->w;//((float)fc->w / 800.0f) * 2.0f;
-	gchar->rect_ui.h = (float)fc->h;//((float)fc->h / 800.0f) * 2.0f;
+	assert(fc->w > 0 || fc->h > 0);
+	gchar->rect_ui.x = x;
+	gchar->rect_ui.y = y;
+	gchar->rect_ui.w = (float)fc->w;
+	gchar->rect_ui.h = (float)fc->h;
 	gchar->rect_font = fc->rect;
 }
-
-#if 0
-enum widget_type_t
-{
-	WIDGET_SLIDER,
-	WIDGET_BUTTON,
-};
-typedef enum widget_type_t widget_type_t;
-
-struct widget_slider_t
-{
-	int uwu;
-};
-typedef struct widget_slider_t widget_slider_t;
-
-struct widget_button_t
-{
-	int uwu;
-};
-typedef struct widget_button_t widget_button_t;
-
-struct widget_t
-{
-	float w, h;
-	widget_type_t type;
-	union
-	{
-		widget_slider_t slider;
-		widget_button_t button;
-	};
-};
-typedef struct widget_t widget_t;
-#endif
 
 struct uip_block_t
 {
@@ -336,6 +307,179 @@ void gchar_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count, v
 
 	#undef ATTRIB_LOCATION_POS_XYWH
 	#undef ATTRIB_LOCATION_FONT_XYWH
+}
+
+unsigned int alloc_gstring(uipt_t* ui_gchar_table, const char* string, const font_t* font, float x, float y)
+{
+	unsigned int gchar_count = 0;
+	for (unsigned int string_i = 0; string[string_i] != '\0'; string_i++)
+	{
+		if (string[string_i] != ' ')
+		{
+			gchar_count++;
+		}
+	}
+
+	unsigned int gchar_block_index = uipt_alloc_prim_block(ui_gchar_table, gchar_count);
+	gchar_t* gchar_block = uipt_get_prim_block(ui_gchar_table, gchar_block_index);
+	float x_offset = 0.0f;
+	int prev_is_char = 0;
+	unsigned int block_i = 0;
+	for (unsigned int string_i = 0; string[string_i] != '\0'; string_i++)
+	{
+		if (string[string_i] == ' ')
+		{
+			x_offset += font->space_length;
+			prev_is_char = 0;
+		}
+		else
+		{
+			if (prev_is_char)
+			{
+				x_offset += font->implicit_space_length;
+			}
+			gchar_set(&gchar_block[block_i++], font, string[string_i], x + x_offset, y);
+			x_offset += (float)font->char_arr[string[string_i] - ' '].w;
+			prev_is_char = 1;
+		}
+	}
+	return gchar_block_index;
+}
+
+void gstring_get_dimensions(const char* string, const font_t* font, float* out_w, float* out_h)
+{
+	float x_offset = 0.0f;
+	float h_max = 0.0f;
+	int prev_is_char = 0;
+	for (unsigned int string_i = 0; string[string_i] != '\0'; string_i++)
+	{
+		if (string[string_i] == ' ')
+		{
+			x_offset += font->space_length;
+			prev_is_char = 0;
+		}
+		else
+		{
+			if (prev_is_char)
+			{
+				x_offset += font->implicit_space_length;
+			}
+			const font_char_t* font_char = &font->char_arr[string[string_i] - ' '];
+			x_offset += (float)font_char->w;
+			if (h_max < (float)font_char->h)
+			{
+				h_max = (float)font_char->h;
+			}
+			prev_is_char = 1;
+		}
+	}
+	
+	*out_w = x_offset;
+	*out_h = h_max;
+}
+
+struct ui_fabric_t
+{
+	uipt_t ui_line_table;
+	uipt_t ui_triangle_table;
+	font_t font;
+	uipt_t ui_gchar_table;
+};
+typedef struct ui_fabric_t ui_fabric_t;
+
+enum widget_type_t
+{
+	WIDGET_SLIDER,
+	WIDGET_BUTTON,
+};
+typedef enum widget_type_t widget_type_t;
+
+struct widget_slider_t
+{
+	int uwu;
+};
+typedef struct widget_slider_t widget_slider_t;
+
+struct widget_button_t
+{
+	unsigned int line_block_index;
+	unsigned int triangle_block_index;
+	unsigned int gchar_block_index;
+	void (*clic_callback)(void);
+};
+typedef struct widget_button_t widget_button_t;
+
+struct widget_t
+{
+	float w, h;
+	widget_type_t type;
+	union
+	{
+		widget_slider_t slider;
+		widget_button_t button;
+	};
+};
+typedef struct widget_t widget_t;
+
+void widget_init_button(ui_fabric_t* ui_fabric, widget_t* widget,
+	float x, float y, float w, float h, char* text, void (*clic_callback)(void))
+{
+	widget->w = w;
+	widget->h = h;
+
+	widget->type = WIDGET_BUTTON;
+
+	widget->button.clic_callback = clic_callback;
+
+	const float xx = x + 0.5f;
+	const float yy = y + 0.5f;
+
+	widget->button.line_block_index = uipt_alloc_prim_block(&ui_fabric->ui_line_table, 4);
+	ui_line_t* line_block = uipt_get_prim_block(&ui_fabric->ui_line_table,
+		widget->button.line_block_index);
+	line_block[0].a = (ui_vertex_t){.x = xx,     .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[0].b = (ui_vertex_t){.x = xx + w, .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[1].a = (ui_vertex_t){.x = xx + w, .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[1].b = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[2].a = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[2].b = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[3].a = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[3].b = (ui_vertex_t){.x = xx,     .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+
+	widget->button.triangle_block_index = uipt_alloc_prim_block(&ui_fabric->ui_triangle_table, 2);
+	ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_fabric->ui_triangle_table,
+		widget->button.triangle_block_index);
+	triangle_block[0].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[0].b = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[0].c = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[1].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[1].b = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[1].c = (ui_vertex_t){.x = xx + w, .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+
+	float gstring_w, gstring_h;
+	gstring_get_dimensions(text, &ui_fabric->font, &gstring_w, &gstring_h);
+
+	widget->button.gchar_block_index = alloc_gstring(&ui_fabric->ui_gchar_table,
+		text, &ui_fabric->font,
+		floorf(x + (w - gstring_w) / 2.0f), floorf(y + (h - gstring_h) / 2.0f));
+}
+
+int widget_has_coords(widget_t* widget, float widget_x, float widget_y,
+	float coords_x, float coords_y)
+{
+	switch (widget->type)
+	{
+		case WIDGET_BUTTON:
+			return widget_x <= coords_x && coords_x <= widget_x + widget->w &&
+				widget_y <= coords_y && coords_y <= widget_y + widget->h;
+		break;
+	}
+	return 0;
+}
+
+void callback_test(void)
+{
+	printf("Hello callback!\n");
 }
 
 int main(int argc, const char** argv)
@@ -614,10 +758,12 @@ int main(int argc, const char** argv)
 
 	/* Ui primitive tables setup. */
 
-	uipt_t ui_line_table;
-	uipt_init(&ui_line_table, sizeof(ui_line_t), line_drawcall_callback);
-	unsigned int line_block_index = uipt_alloc_prim_block(&ui_line_table, 4);
-	ui_line_t* line_block = uipt_get_prim_block(&ui_line_table, line_block_index);
+	ui_fabric_t ui_fabric = {0};
+
+	uipt_init(&ui_fabric.ui_line_table, sizeof(ui_line_t), line_drawcall_callback);
+	#if 0
+	unsigned int line_block_index = uipt_alloc_prim_block(&ui_fabric.ui_line_table, 4);
+	ui_line_t* line_block = uipt_get_prim_block(&ui_fabric.ui_line_table, line_block_index);
 	line_block[0].a = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
 	line_block[0].b = (ui_vertex_t){.x = 600.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
 	line_block[1].a = (ui_vertex_t){.x = 600.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
@@ -626,27 +772,31 @@ int main(int argc, const char** argv)
 	line_block[2].b = (ui_vertex_t){.x = 200.5f, .y = 600.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
 	line_block[3].a = (ui_vertex_t){.x = 200.5f, .y = 600.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
 	line_block[3].b = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	#endif
 
-	uipt_t ui_triangle_table;
-	uipt_init(&ui_triangle_table, sizeof(ui_triangle_t), triangle_drawcall_callback);
-	unsigned int triangle_block_index = uipt_alloc_prim_block(&ui_triangle_table, 2);
-	ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_triangle_table, triangle_block_index);
+	uipt_init(&ui_fabric.ui_triangle_table, sizeof(ui_triangle_t), triangle_drawcall_callback);
+	#if 0
+	unsigned int triangle_block_index = uipt_alloc_prim_block(&ui_fabric.ui_triangle_table, 2);
+	ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_fabric.ui_triangle_table, triangle_block_index);
 	triangle_block[0].a = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
 	triangle_block[0].b = (ui_vertex_t){.x = 200.5f, .y = 600.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
 	triangle_block[0].c = (ui_vertex_t){.x = 600.5f, .y = 600.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
 	triangle_block[1].a = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
 	triangle_block[1].b = (ui_vertex_t){.x = 600.5f, .y = 600.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
 	triangle_block[1].c = (ui_vertex_t){.x = 600.5f, .y = 200.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
+	#endif
 
 	/* Font and text setup. */
 
-	font_t font;
-	font.texture_side = 256;
-	font.texture_data = calloc(font.texture_side * font.texture_side, 1);
+	ui_fabric.font.implicit_space_length = 1.0f;
+	ui_fabric.font.space_length = 5.0f;
+
+	ui_fabric.font.texture_side = 256;
+	ui_fabric.font.texture_data = calloc(ui_fabric.font.texture_side * ui_fabric.font.texture_side, 1);
 
 	unsigned int char_x = 0, char_y = 0;
 	#define PAINT(x_, y_, v_) \
-		font.texture_data[(char_x + (x_)) + (char_y + (y_)) * font.texture_side] = (v_)
+		ui_fabric.font.texture_data[(char_x + (x_)) + (char_y + (y_)) * ui_fabric.font.texture_side] = (v_)
 
 	unsigned int line_i;
 	#define LINE(...) \
@@ -670,12 +820,12 @@ int main(int argc, const char** argv)
 		do \
 		{ \
 			_Static_assert(' ' < (c_) && (c_) <= '~', "Invalid character"); \
-			font.char_arr[(c_) - ' '] = (font_char_t){ \
+			ui_fabric.font.char_arr[(c_) - ' '] = (font_char_t){ \
 				.rect = { \
-					.x = (float)char_x / (float)font.texture_side, \
-					.y = (float)char_y / (float)font.texture_side, \
-					.h = 8.0f / (float)font.texture_side, \
-					.w = (float)(w_) / (float)font.texture_side \
+					.x = (float)char_x / (float)ui_fabric.font.texture_side, \
+					.y = (float)char_y / (float)ui_fabric.font.texture_side, \
+					.h = 8.0f / (float)ui_fabric.font.texture_side, \
+					.w = (float)(w_) / (float)ui_fabric.font.texture_side \
 				}, \
 				.w = (w_), \
 				.h = 8 \
@@ -977,33 +1127,22 @@ int main(int argc, const char** argv)
 	#undef LINE
 	#undef PAINT
 
-	glGenTextures(1, &font.texture_id);
-	glBindTexture(GL_TEXTURE_2D, font.texture_id);
+	glGenTextures(1, &ui_fabric.font.texture_id);
+	glBindTexture(GL_TEXTURE_2D, ui_fabric.font.texture_id);
 	glTexImage2D(GL_TEXTURE_2D,
-		0, GL_RED, font.texture_side, font.texture_side, 0, GL_RED, GL_UNSIGNED_BYTE, font.texture_data);
+		0, GL_RED, ui_fabric.font.texture_side, ui_fabric.font.texture_side, 0, GL_RED, GL_UNSIGNED_BYTE, ui_fabric.font.texture_data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	uipt_t ui_gchar_table;
-	uipt_init(&ui_gchar_table, sizeof(gchar_t), gchar_drawcall_callback);
-	unsigned int gchar_block_index = uipt_alloc_prim_block(&ui_gchar_table, 18);
-	gchar_t* gchar_block = uipt_get_prim_block(&ui_gchar_table, gchar_block_index);
-	char s[] = "COUCOU Y A DU TEXT UWU";
-	float x_offset = 0.0f;
-	unsigned int ii = 0;
-	for (unsigned int i = 0; s[i] != '\0'; i++)
-	{
-		if (s[i] == ' ')
-		{
-			x_offset += 5;
-			continue;
-		}
-		gchar_set(&gchar_block[ii], &font, s[i], 20.0f + x_offset, 80.0f);
-		ii++;
-		x_offset += font.char_arr[s[i] - ' '].w + 1;
-	}
+	uipt_init(&ui_fabric.ui_gchar_table, sizeof(gchar_t), gchar_drawcall_callback);
+	#if 0
+	unsigned int gchar_block_index = alloc_gstring(&ui_fabric.ui_gchar_table, "COUCOU Y A DU TEXT UWU", &ui_fabric.font, 20.0f, 80.0f);
+	(void)gchar_block_index;
+	#endif
 
 	/* UI setup. */
+
+	#if 1
 
 	const float ui_margin = 6.5f;
 	const float ui_size = 20.0f;
@@ -1113,6 +1252,8 @@ int main(int argc, const char** argv)
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof ui_rect_vertex_index_array,
 		ui_rect_vertex_index_array, GL_STATIC_DRAW);
 
+	#endif
+
 	ui_vertex_t ui_bg_vertex_array[4] = {
 		{.x = 800.0f, .y = 800.0f},
 		{.x =   0.0f, .y = 800.0f},
@@ -1133,6 +1274,14 @@ int main(int argc, const char** argv)
 	glBufferData(GL_ARRAY_BUFFER, sizeof ui_bg_vertex_array,
 		ui_bg_vertex_array, GL_STATIC_DRAW);
 
+	/* Widget test. */
+
+	float widget_button_test_x = 20.0f;
+	float widget_button_test_y = 100.0f;
+	widget_t widget_button_test;
+	widget_init_button(&ui_fabric, &widget_button_test,
+		widget_button_test_x, widget_button_test_y, 200.0f, 20.0f, "TEXT UWU", callback_test);
+
 	/* Core loop. */
 
 	unsigned int t = 0;
@@ -1149,11 +1298,20 @@ int main(int argc, const char** argv)
 					running = 0;
 				break;
 
+				#if 1
 				case SDL_MOUSEBUTTONDOWN:
 					if (event.button.x >= 800)
 					{
 						const float x = event.button.x - 800;
 						const float y = 800 - event.button.y;
+
+						if (widget_has_coords(&widget_button_test,
+							widget_button_test_x, widget_button_test_y,
+							x, y))
+						{
+							widget_button_test.button.clic_callback();
+							break;
+						}
 
 						for (unsigned int i = 0; i < BAR_NUMBER; i++)
 						{
@@ -1255,6 +1413,7 @@ int main(int argc, const char** argv)
 						glUnmapBuffer(GL_ARRAY_BUFFER);
 					}
 				break;
+				#endif
 
 				case SDL_KEYDOWN:
 					switch (event.key.keysym.sym)
@@ -1342,56 +1501,6 @@ int main(int argc, const char** argv)
 
 		t++;
 
-		/* Test. */
-		{
-			float v = cosf((float)t * 0.1f);
-			float vv = cosf((float)t * 0.18761f + 0.342567f);
-
-			ui_line_t* line_block = uipt_get_prim_block(&ui_line_table, line_block_index);
-			line_block[0].a.x = 200.5f - 4.0f * v;
-			line_block[0].b.x = 600.5f + 4.0f * v;
-			line_block[1].a.x = 600.5f + 4.0f * v;
-			line_block[1].b.x = 600.5f + 4.0f * v;
-			line_block[2].a.x = 600.5f + 4.0f * v;
-			line_block[2].b.x = 200.5f - 4.0f * v;
-			line_block[3].a.x = 200.5f - 4.0f * v;
-			line_block[3].b.x = 200.5f - 4.0f * v;
-			line_block[0].a.y = 200.5f - 4.0f * vv;
-			line_block[0].b.y = 200.5f - 4.0f * vv;
-			line_block[1].a.y = 200.5f - 4.0f * vv;
-			line_block[1].b.y = 400.5f + 4.0f * vv;
-			line_block[2].a.y = 400.5f + 4.0f * vv;
-			line_block[2].b.y = 400.5f + 4.0f * vv;
-			line_block[3].a.y = 400.5f + 4.0f * vv;
-			line_block[3].b.y = 200.5f - 4.0f * vv;
-			uipt_needs_sync(&ui_line_table, line_block_index);
-
-			ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_triangle_table, triangle_block_index);
-			triangle_block[0].a.x = 200.5f - 4.0f * v;
-			triangle_block[0].b.x = 200.5f - 4.0f * v;
-			triangle_block[0].c.x = 600.5f + 4.0f * v;
-			triangle_block[1].a.x = 200.5f - 4.0f * v;
-			triangle_block[1].b.x = 600.5f + 4.0f * v;
-			triangle_block[1].c.x = 600.5f + 4.0f * v;
-			triangle_block[0].a.y = 200.5f - 4.0f * vv;
-			triangle_block[0].b.y = 400.5f + 4.0f * vv;
-			triangle_block[0].c.y = 400.5f + 4.0f * vv;
-			triangle_block[1].a.y = 200.5f - 4.0f * vv;
-			triangle_block[1].b.y = 400.5f + 4.0f * vv;
-			triangle_block[1].c.y = 200.5f - 4.0f * vv;
-			uipt_needs_sync(&ui_triangle_table, triangle_block_index);
-
-			unsigned int gchar_count = uipt_get_block_len(&ui_gchar_table, gchar_block_index);
-			gchar_t* gchar_block = uipt_get_prim_block(&ui_gchar_table, gchar_block_index);
-			for (unsigned int i = 0; i < gchar_count; i++)
-			{
-				float vvv = cosf((float)t * 0.1f + (float)i * 0.15f);
-				gchar_block[i].rect_ui.y = 80.0f + 4.0f * vvv;
-
-			}
-			uipt_needs_sync(&ui_gchar_table, gchar_block_index);
-		}
-
 		/* Render the UI. */
 		{
 			#define ATTRIB_LOCATION_POS 0
@@ -1411,7 +1520,8 @@ int main(int argc, const char** argv)
 				GL_FALSE, sizeof(ui_vertex_t),
 				(void*)offsetof(ui_vertex_t, r));
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-			
+
+			#if 1
 			/* Render rect bar filling. */
 			glBindBuffer(GL_ARRAY_BUFFER, buf_ui_rect_id);
 			glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
@@ -1435,6 +1545,7 @@ int main(int argc, const char** argv)
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf_ui_line_index_id);
 			glDrawElements(GL_LINES, 8 * BAR_NUMBER, GL_UNSIGNED_INT,
 				(void*)0);
+			#endif
 			
 			glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
 			glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
@@ -1442,13 +1553,13 @@ int main(int argc, const char** argv)
 
 			#undef ATTRIB_LOCATION_POS
 			#undef ATTRIB_LOCATION_COLOR
-		}
 
-		/* Test. */
-		{
-			uipt_draw(&ui_triangle_table, NULL);
-			uipt_draw(&ui_line_table, NULL);
-			uipt_draw(&ui_gchar_table, &font);
+			/* Draw the UI fabric. */
+			{
+				uipt_draw(&ui_fabric.ui_triangle_table, NULL);
+				uipt_draw(&ui_fabric.ui_line_table, NULL);
+				uipt_draw(&ui_fabric.ui_gchar_table, &ui_fabric.font);
+			}
 		}
 
 		/* Fade-to-black effect in the universe. */
