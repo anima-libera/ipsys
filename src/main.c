@@ -309,20 +309,18 @@ void gchar_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count, v
 	#undef ATTRIB_LOCATION_FONT_XYWH
 }
 
-unsigned int alloc_gstring(uipt_t* ui_gchar_table, const char* string, const font_t* font, float x, float y)
+struct gstring_t
 {
-	unsigned int gchar_count = 0;
-	for (unsigned int string_i = 0; string[string_i] != '\0'; string_i++)
-	{
-		if (string[string_i] != ' ')
-		{
-			gchar_count++;
-		}
-	}
+	const char* string;
+	unsigned int gchar_block_index;
+	float w, h;
+};
+typedef struct gstring_t gstring_t;
 
-	unsigned int gchar_block_index = uipt_alloc_prim_block(ui_gchar_table, gchar_count);
-	gchar_t* gchar_block = uipt_get_prim_block(ui_gchar_table, gchar_block_index);
+void init_gstring(gstring_t* gstring, gchar_t* gchar_block, const char* string, const font_t* font, float x, float y)
+{
 	float x_offset = 0.0f;
+	float h_max = 0.0f;
 	int prev_is_char = 0;
 	unsigned int block_i = 0;
 	for (unsigned int string_i = 0; string[string_i] != '\0'; string_i++)
@@ -339,14 +337,40 @@ unsigned int alloc_gstring(uipt_t* ui_gchar_table, const char* string, const fon
 				x_offset += font->implicit_space_length;
 			}
 			gchar_set(&gchar_block[block_i++], font, string[string_i], x + x_offset, y);
-			x_offset += (float)font->char_arr[string[string_i] - ' '].w;
+			const font_char_t* font_char = &font->char_arr[string[string_i] - ' '];
+			x_offset += (float)font_char->w;
+			if (h_max < (float)font_char->h)
+			{
+				h_max = (float)font_char->h;
+			}
 			prev_is_char = 1;
 		}
 	}
-	return gchar_block_index;
+	gstring->w = x_offset;
+	gstring->h = h_max;
+	gstring->string = string;
 }
 
-void gstring_get_dimensions(const char* string, const font_t* font, float* out_w, float* out_h)
+gstring_t alloc_gstring(uipt_t* ui_gchar_table, const char* string, const font_t* font, float x, float y)
+{
+	unsigned int gchar_count = 0;
+	for (unsigned int string_i = 0; string[string_i] != '\0'; string_i++)
+	{
+		if (string[string_i] != ' ')
+		{
+			gchar_count++;
+		}
+	}
+
+	unsigned int gchar_block_index = uipt_alloc_prim_block(ui_gchar_table, gchar_count);
+	gchar_t* gchar_block = uipt_get_prim_block(ui_gchar_table, gchar_block_index);
+	gstring_t gstring;
+	gstring.gchar_block_index = gchar_block_index;
+	init_gstring(&gstring, gchar_block, string, font, x, y);
+	return gstring;
+}
+
+void gstring_predict_dimensions(const char* string, const font_t* font, float* out_w, float* out_h)
 {
 	float x_offset = 0.0f;
 	float h_max = 0.0f;
@@ -378,6 +402,42 @@ void gstring_get_dimensions(const char* string, const font_t* font, float* out_w
 	*out_h = h_max;
 }
 
+void gstring_get_dimensions(uipt_t* ui_gchar_table, unsigned int gchar_block_index, float* out_w, float* out_h)
+{
+	gchar_t* gchar_block = uipt_get_prim_block(ui_gchar_table, gchar_block_index);
+	unsigned int len = uipt_get_block_len(ui_gchar_table, gchar_block_index);
+
+	assert(len >= 1);
+
+	float inf_x = gchar_block[0].rect_ui.x;
+	float sup_x = gchar_block[0].rect_ui.x + gchar_block[0].rect_ui.w;
+	float inf_y = gchar_block[0].rect_ui.y;
+	float sup_y = gchar_block[0].rect_ui.y + gchar_block[0].rect_ui.h;
+
+	for (unsigned int i = 1; i < len; i++)
+	{
+		if (inf_x > gchar_block[0].rect_ui.x)
+		{
+			inf_x = gchar_block[0].rect_ui.x;
+		}
+		if (sup_x < gchar_block[0].rect_ui.x + gchar_block[0].rect_ui.w)
+		{
+			sup_x = gchar_block[0].rect_ui.x + gchar_block[0].rect_ui.w;
+		}
+		if (inf_y > gchar_block[0].rect_ui.y)
+		{
+			inf_y = gchar_block[0].rect_ui.y;
+		}
+		if (sup_y < gchar_block[0].rect_ui.y + gchar_block[0].rect_ui.h)
+		{
+			sup_y = gchar_block[0].rect_ui.y + gchar_block[0].rect_ui.h;
+		}
+	}
+	
+	*out_w = sup_x - inf_x;
+	*out_h = sup_y - inf_y;
+}
+
 struct ui_fabric_t
 {
 	uipt_t ui_line_table;
@@ -404,7 +464,7 @@ struct widget_button_t
 {
 	unsigned int line_block_index;
 	unsigned int triangle_block_index;
-	unsigned int gchar_block_index;
+	gstring_t gstring;
 	void (*clic_callback)(void);
 };
 typedef struct widget_button_t widget_button_t;
@@ -457,11 +517,48 @@ void widget_init_button(ui_fabric_t* ui_fabric, widget_t* widget,
 	triangle_block[1].c = (ui_vertex_t){.x = xx + w, .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
 
 	float gstring_w, gstring_h;
-	gstring_get_dimensions(text, &ui_fabric->font, &gstring_w, &gstring_h);
+	gstring_predict_dimensions(text, &ui_fabric->font, &gstring_w, &gstring_h);
 
-	widget->button.gchar_block_index = alloc_gstring(&ui_fabric->ui_gchar_table,
+	widget->button.gstring = alloc_gstring(&ui_fabric->ui_gchar_table,
 		text, &ui_fabric->font,
 		floorf(x + (w - gstring_w) / 2.0f), floorf(y + (h - gstring_h) / 2.0f));
+}
+
+void widget_reposition_button(ui_fabric_t* ui_fabric, widget_t* widget,
+	float x, float y, float w, float h)
+{
+	widget->w = w;
+	widget->h = h;
+
+	const float xx = x + 0.5f;
+	const float yy = y + 0.5f;
+
+	ui_line_t* line_block = uipt_get_prim_block(&ui_fabric->ui_line_table,
+		widget->button.line_block_index);
+	line_block[0].a = (ui_vertex_t){.x = xx,     .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[0].b = (ui_vertex_t){.x = xx + w, .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[1].a = (ui_vertex_t){.x = xx + w, .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[1].b = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[2].a = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[2].b = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[3].a = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[3].b = (ui_vertex_t){.x = xx,     .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+
+	ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_fabric->ui_triangle_table,
+		widget->button.triangle_block_index);
+	triangle_block[0].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[0].b = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[0].c = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[1].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[1].b = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[1].c = (ui_vertex_t){.x = xx + w, .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+
+	gchar_t* gchar_block = uipt_get_prim_block(&ui_fabric->ui_gchar_table,
+		widget->button.gstring.gchar_block_index);
+	init_gstring(&widget->button.gstring, gchar_block,
+		widget->button.gstring.string, &ui_fabric->font,
+		floorf(x + (w - widget->button.gstring.w) / 2.0f),
+		floorf(y + (h - widget->button.gstring.h) / 2.0f));
 }
 
 int widget_has_coords(widget_t* widget, float widget_x, float widget_y,
@@ -480,6 +577,47 @@ int widget_has_coords(widget_t* widget, float widget_x, float widget_y,
 void callback_test(void)
 {
 	printf("Hello callback!\n");
+}
+
+struct pos_widget_t
+{
+	float x, y;
+	widget_t* widget;
+};
+typedef struct pos_widget_t pos_widget_t;
+
+struct widget_manager_t
+{
+	unsigned int len;
+	unsigned int cap;
+	pos_widget_t* arr;
+	float next_x, next_y;
+};
+typedef struct widget_manager_t widget_manager_t;
+
+widget_t* widget_manager_give(widget_manager_t* wm, ui_fabric_t* ui_fabric, widget_t* widget)
+{
+	DA_LENGTHEN(wm->len += 1, wm->cap, wm->arr, pos_widget_t);
+	pos_widget_t* posw = &wm->arr[wm->len-1];
+	posw->widget = widget;
+	posw->x = wm->next_x;
+	posw->y = wm->next_y;
+	widget_reposition_button(ui_fabric, widget, posw->x, posw->y, widget->w, widget->h);
+	wm->next_y += widget->h + 20.0f;
+}
+
+int widget_manager_clic(widget_manager_t* wm, float x, float y)
+{
+	for (unsigned int i = 0; i < wm->len; i++)
+	{
+		if (widget_has_coords(wm->arr[i].widget,
+			wm->arr[i].x, wm->arr[i].y, x, y))
+		{
+			wm->arr[i].widget->button.clic_callback();
+			return 1;
+		}
+	}
+	return 0;
 }
 
 int main(int argc, const char** argv)
@@ -1276,11 +1414,23 @@ int main(int argc, const char** argv)
 
 	/* Widget test. */
 
+	#if 0
 	float widget_button_test_x = 20.0f;
 	float widget_button_test_y = 100.0f;
 	widget_t widget_button_test;
 	widget_init_button(&ui_fabric, &widget_button_test,
 		widget_button_test_x, widget_button_test_y, 200.0f, 20.0f, "TEXT UWU", callback_test);
+	#endif
+
+	widget_manager_t wm = {.next_x = 20.0f, .next_y = 20.0f};
+
+	widget_t widget_button_test_arr[4];
+	for (unsigned int i = 0; i < 4; i++)
+	{
+		widget_init_button(&ui_fabric, &widget_button_test_arr[i],
+			0.0f, 0.0f, 200.0f, 20.0f, "TEXT UWU", callback_test);
+		widget_manager_give(&wm, &ui_fabric, &widget_button_test_arr[i]);
+	}
 
 	/* Core loop. */
 
@@ -1305,6 +1455,11 @@ int main(int argc, const char** argv)
 						const float x = event.button.x - 800;
 						const float y = 800 - event.button.y;
 
+						if (widget_manager_clic(&wm, x, y))
+						{
+							break;
+						}
+						#if 0
 						if (widget_has_coords(&widget_button_test,
 							widget_button_test_x, widget_button_test_y,
 							x, y))
@@ -1312,6 +1467,7 @@ int main(int argc, const char** argv)
 							widget_button_test.button.clic_callback();
 							break;
 						}
+						#endif
 
 						for (unsigned int i = 0; i < BAR_NUMBER; i++)
 						{
