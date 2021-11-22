@@ -416,21 +416,21 @@ void gstring_get_dimensions(uipt_t* ui_gchar_table, unsigned int gchar_block_ind
 
 	for (unsigned int i = 1; i < len; i++)
 	{
-		if (inf_x > gchar_block[0].rect_ui.x)
+		if (inf_x > gchar_block[i].rect_ui.x)
 		{
-			inf_x = gchar_block[0].rect_ui.x;
+			inf_x = gchar_block[i].rect_ui.x;
 		}
-		if (sup_x < gchar_block[0].rect_ui.x + gchar_block[0].rect_ui.w)
+		if (sup_x < gchar_block[i].rect_ui.x + gchar_block[i].rect_ui.w)
 		{
-			sup_x = gchar_block[0].rect_ui.x + gchar_block[0].rect_ui.w;
+			sup_x = gchar_block[i].rect_ui.x + gchar_block[i].rect_ui.w;
 		}
-		if (inf_y > gchar_block[0].rect_ui.y)
+		if (inf_y > gchar_block[i].rect_ui.y)
 		{
-			inf_y = gchar_block[0].rect_ui.y;
+			inf_y = gchar_block[i].rect_ui.y;
 		}
-		if (sup_y < gchar_block[0].rect_ui.y + gchar_block[0].rect_ui.h)
+		if (sup_y < gchar_block[i].rect_ui.y + gchar_block[i].rect_ui.h)
 		{
-			sup_y = gchar_block[0].rect_ui.y + gchar_block[0].rect_ui.h;
+			sup_y = gchar_block[i].rect_ui.y + gchar_block[i].rect_ui.h;
 		}
 	}
 	
@@ -595,7 +595,7 @@ struct widget_manager_t
 };
 typedef struct widget_manager_t widget_manager_t;
 
-widget_t* widget_manager_give(widget_manager_t* wm, ui_fabric_t* ui_fabric, widget_t* widget)
+void widget_manager_give(widget_manager_t* wm, ui_fabric_t* ui_fabric, widget_t* widget)
 {
 	DA_LENGTHEN(wm->len += 1, wm->cap, wm->arr, pos_widget_t);
 	pos_widget_t* posw = &wm->arr[wm->len-1];
@@ -628,12 +628,17 @@ int main(int argc, const char** argv)
 
 	const char* arg_type_number = NULL;
 	const char* arg_ipsysd_filepath = NULL;
+	int no_universe = 0;
 
 	for (unsigned int i = 1; i < (unsigned int)argc; i++)
 	{
 		if (strcmp(argv[i], "-d") == 0)
 		{
 			//assert(0);
+		}
+		else if (strcmp(argv[i], "-n") == 0)
+		{
+			no_universe = 1;
 		}
 		else if (strcmp(argv[i], "-f") == 0)
 		{
@@ -897,32 +902,8 @@ int main(int argc, const char** argv)
 	/* Ui primitive tables setup. */
 
 	ui_fabric_t ui_fabric = {0};
-
 	uipt_init(&ui_fabric.ui_line_table, sizeof(ui_line_t), line_drawcall_callback);
-	#if 0
-	unsigned int line_block_index = uipt_alloc_prim_block(&ui_fabric.ui_line_table, 4);
-	ui_line_t* line_block = uipt_get_prim_block(&ui_fabric.ui_line_table, line_block_index);
-	line_block[0].a = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
-	line_block[0].b = (ui_vertex_t){.x = 600.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
-	line_block[1].a = (ui_vertex_t){.x = 600.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
-	line_block[1].b = (ui_vertex_t){.x = 600.5f, .y = 600.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
-	line_block[2].a = (ui_vertex_t){.x = 600.5f, .y = 600.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
-	line_block[2].b = (ui_vertex_t){.x = 200.5f, .y = 600.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
-	line_block[3].a = (ui_vertex_t){.x = 200.5f, .y = 600.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
-	line_block[3].b = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 1.0f, .g = 1.0f, .b = 1.0f};
-	#endif
-
 	uipt_init(&ui_fabric.ui_triangle_table, sizeof(ui_triangle_t), triangle_drawcall_callback);
-	#if 0
-	unsigned int triangle_block_index = uipt_alloc_prim_block(&ui_fabric.ui_triangle_table, 2);
-	ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_fabric.ui_triangle_table, triangle_block_index);
-	triangle_block[0].a = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
-	triangle_block[0].b = (ui_vertex_t){.x = 200.5f, .y = 600.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
-	triangle_block[0].c = (ui_vertex_t){.x = 600.5f, .y = 600.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
-	triangle_block[1].a = (ui_vertex_t){.x = 200.5f, .y = 200.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
-	triangle_block[1].b = (ui_vertex_t){.x = 600.5f, .y = 600.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
-	triangle_block[1].c = (ui_vertex_t){.x = 600.5f, .y = 200.5f, .r = 0.0f, .g = 0.3f, .b = 0.3f};
-	#endif
 
 	/* Font and text setup. */
 
@@ -1273,10 +1254,6 @@ int main(int argc, const char** argv)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	uipt_init(&ui_fabric.ui_gchar_table, sizeof(gchar_t), gchar_drawcall_callback);
-	#if 0
-	unsigned int gchar_block_index = alloc_gstring(&ui_fabric.ui_gchar_table, "COUCOU Y A DU TEXT UWU", &ui_fabric.font, 20.0f, 80.0f);
-	(void)gchar_block_index;
-	#endif
 
 	/* UI setup. */
 
@@ -1414,14 +1391,6 @@ int main(int argc, const char** argv)
 
 	/* Widget test. */
 
-	#if 0
-	float widget_button_test_x = 20.0f;
-	float widget_button_test_y = 100.0f;
-	widget_t widget_button_test;
-	widget_init_button(&ui_fabric, &widget_button_test,
-		widget_button_test_x, widget_button_test_y, 200.0f, 20.0f, "TEXT UWU", callback_test);
-	#endif
-
 	widget_manager_t wm = {.next_x = 20.0f, .next_y = 20.0f};
 
 	widget_t widget_button_test_arr[4];
@@ -1459,15 +1428,6 @@ int main(int argc, const char** argv)
 						{
 							break;
 						}
-						#if 0
-						if (widget_has_coords(&widget_button_test,
-							widget_button_test_x, widget_button_test_y,
-							x, y))
-						{
-							widget_button_test.button.clic_callback();
-							break;
-						}
-						#endif
 
 						for (unsigned int i = 0; i < BAR_NUMBER; i++)
 						{
@@ -1718,122 +1678,125 @@ int main(int argc, const char** argv)
 			}
 		}
 
-		/* Fade-to-black effect in the universe. */
-		if (no_fading)
+		if (!no_universe)
 		{
-			glBindFramebuffer(GL_FRAMEBUFFER,
-				univ_fbo_double_id[univ_rendering_index]);
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		}
-		else
-		{
-			glBindFramebuffer(GL_FRAMEBUFFER,
-				univ_fbo_double_id[univ_rendering_index]);
-			glViewport(0, 0, 800, 800);
-
-			glActiveTexture(GL_TEXTURE0 + 0);
-			glBindTexture(GL_TEXTURE_2D, univ_texture_double_id[1-univ_rendering_index]);
-
-			#define ATTRIB_LOCATION_POS 0
-
-			glUseProgram(g_shprog_draw_texture_fade_2);
-			glProgramUniform1f(g_shprog_draw_texture_fade_2, 0, g_setting_read_fade_factor);
-			glProgramUniform1i(g_shprog_draw_texture_fade_2, 1, 0);
-
-			glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
-			
-			glBindBuffer(GL_ARRAY_BUFFER, buf_univ_full_rect_id);
-			glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
-				GL_FALSE, sizeof(just_vertex_t),
-				(void*)offsetof(just_vertex_t, x));
-			
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-			glUseProgram(0);
-
-			#undef ATTRIB_LOCATION_POS
-		}
-
-		/* Universe iterations. */
-		for (unsigned int i = 0; i < iteration_number_per_frame; i++)
-		{
-			if (render_each_iteration)
+			/* Fade-to-black effect in the universe. */
+			if (no_fading)
 			{
-				glProgramUniform1i(g_shprog_comp_iteruniv, 0, 1);
+				glBindFramebuffer(GL_FRAMEBUFFER,
+					univ_fbo_double_id[univ_rendering_index]);
+				glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+				glClear(GL_COLOR_BUFFER_BIT);
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			}
 			else
-			{
-				glProgramUniform1i(g_shprog_comp_iteruniv, 0, i == 0);
-			}
-			glUseProgram(g_shprog_comp_iteruniv);
-			
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, buf_part_curr_id);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buf_part_next_id);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, buf_type_id);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, buf_pil_set_id);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, buf_info_id);
-
-			glDispatchCompute(PARTICLE_NUMBER / WORK_GROUP_SIZE, 1, 1);
-			glUseProgram((GLuint)0);
-			glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
-
-			SWAP(GLuint, buf_part_curr_id, buf_part_next_id);
-
-			/* Render the particles in the universe. */
-			if (render_each_iteration || i == iteration_number_per_frame-1)
 			{
 				glBindFramebuffer(GL_FRAMEBUFFER,
 					univ_fbo_double_id[univ_rendering_index]);
 				glViewport(0, 0, 800, 800);
 
+				glActiveTexture(GL_TEXTURE0 + 0);
+				glBindTexture(GL_TEXTURE_2D, univ_texture_double_id[1-univ_rendering_index]);
+
 				#define ATTRIB_LOCATION_POS 0
-				#define ATTRIB_LOCATION_COLOR 1
-				#define ATTRIB_LOCATION_ANGLE 2
-				#define ATTRIB_LOCATION_OLDPOS 3
 
-				glUseProgram(g_shprog_draw_particles);
+				glUseProgram(g_shprog_draw_texture_fade_2);
+				glProgramUniform1f(g_shprog_draw_texture_fade_2, 0, g_setting_read_fade_factor);
+				glProgramUniform1i(g_shprog_draw_texture_fade_2, 1, 0);
+
 				glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
-				glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
-				glEnableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
-				glEnableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
 				
-				glBindBuffer(GL_ARRAY_BUFFER, buf_part_curr_id);
+				glBindBuffer(GL_ARRAY_BUFFER, buf_univ_full_rect_id);
 				glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
-					GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, x));
-				glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
-					GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, r));
-				glVertexAttribPointer(ATTRIB_LOCATION_ANGLE, 1, GL_FLOAT,
-					GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, angle));
-				glVertexAttribPointer(ATTRIB_LOCATION_OLDPOS, 2, GL_FLOAT,
-					GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, oldx));
-
-				glDrawArrays(GL_POINTS, 0, PARTICLE_NUMBER);
+					GL_FALSE, sizeof(just_vertex_t),
+					(void*)offsetof(just_vertex_t, x));
 				
-				glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
-				glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
-				glDisableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
-				glDisableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
+				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
 				glUseProgram(0);
 
 				#undef ATTRIB_LOCATION_POS
-				#undef ATTRIB_LOCATION_COLOR
-				#undef ATTRIB_LOCATION_ANGLE
-				#undef ATTRIB_LOCATION_OLDPOS
-
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			}
-		}
 
-		{
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, univ_fbo_double_id[univ_rendering_index]);
-			glBlitFramebuffer(0, 0, 800, 800, 0, 0, 800, 800, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-		}
+			/* Universe iterations. */
+			for (unsigned int i = 0; i < iteration_number_per_frame; i++)
+			{
+				if (render_each_iteration)
+				{
+					glProgramUniform1i(g_shprog_comp_iteruniv, 0, 1);
+				}
+				else
+				{
+					glProgramUniform1i(g_shprog_comp_iteruniv, 0, i == 0);
+				}
+				glUseProgram(g_shprog_comp_iteruniv);
+				
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, buf_part_curr_id);
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buf_part_next_id);
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, buf_type_id);
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, buf_pil_set_id);
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, buf_info_id);
 
-		univ_rendering_index = 1 - univ_rendering_index;
+				glDispatchCompute(PARTICLE_NUMBER / WORK_GROUP_SIZE, 1, 1);
+				glUseProgram((GLuint)0);
+				glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+
+				SWAP(GLuint, buf_part_curr_id, buf_part_next_id);
+
+				/* Render the particles in the universe. */
+				if (render_each_iteration || i == iteration_number_per_frame-1)
+				{
+					glBindFramebuffer(GL_FRAMEBUFFER,
+						univ_fbo_double_id[univ_rendering_index]);
+					glViewport(0, 0, 800, 800);
+
+					#define ATTRIB_LOCATION_POS 0
+					#define ATTRIB_LOCATION_COLOR 1
+					#define ATTRIB_LOCATION_ANGLE 2
+					#define ATTRIB_LOCATION_OLDPOS 3
+
+					glUseProgram(g_shprog_draw_particles);
+					glEnableVertexAttribArray(ATTRIB_LOCATION_POS);
+					glEnableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+					glEnableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
+					glEnableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
+					
+					glBindBuffer(GL_ARRAY_BUFFER, buf_part_curr_id);
+					glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
+						GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, x));
+					glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
+						GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, r));
+					glVertexAttribPointer(ATTRIB_LOCATION_ANGLE, 1, GL_FLOAT,
+						GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, angle));
+					glVertexAttribPointer(ATTRIB_LOCATION_OLDPOS, 2, GL_FLOAT,
+						GL_FALSE, sizeof(part_t), (void*)offsetof(part_t, oldx));
+
+					glDrawArrays(GL_POINTS, 0, PARTICLE_NUMBER);
+					
+					glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
+					glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);
+					glDisableVertexAttribArray(ATTRIB_LOCATION_ANGLE);
+					glDisableVertexAttribArray(ATTRIB_LOCATION_OLDPOS);
+					glUseProgram(0);
+
+					#undef ATTRIB_LOCATION_POS
+					#undef ATTRIB_LOCATION_COLOR
+					#undef ATTRIB_LOCATION_ANGLE
+					#undef ATTRIB_LOCATION_OLDPOS
+
+					glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				}
+			}
+
+			{
+				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+				glBindFramebuffer(GL_READ_FRAMEBUFFER, univ_fbo_double_id[univ_rendering_index]);
+				glBlitFramebuffer(0, 0, 800, 800, 0, 0, 800, 800, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+				glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+			}
+
+			univ_rendering_index = 1 - univ_rendering_index;
+		}
 
 		SDL_GL_SwapWindow(g_window);
 	}
