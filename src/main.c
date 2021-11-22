@@ -181,12 +181,19 @@ void uipt_draw(uipt_t* uipt, void* callback_data)
 	}
 	else if (uipt->needs_prim_buffer_sync_sup >= uipt->needs_prim_buffer_sync_inf)
 	{
-		fprintf(stderr, "buffer_sync %d %d\n", uipt->needs_prim_buffer_sync_inf, uipt->needs_prim_buffer_sync_sup);
+		//fprintf(stderr, "buffer_sync %d %d\n", uipt->needs_prim_buffer_sync_inf, uipt->needs_prim_buffer_sync_sup);
 		glBindBuffer(GL_ARRAY_BUFFER, uipt->prim_opengl_buffer_id);
 		glBufferSubData(GL_ARRAY_BUFFER,
-			uipt->needs_prim_buffer_sync_inf * uipt->sizeof_prim,
-			(uipt->needs_prim_buffer_sync_sup + 1 - uipt->needs_prim_buffer_sync_inf) * uipt->sizeof_prim,
+			#if 0
+				uipt->needs_prim_buffer_sync_inf * uipt->sizeof_prim,
+				(uipt->needs_prim_buffer_sync_sup + 1 - uipt->needs_prim_buffer_sync_inf) * uipt->sizeof_prim,
+			#else
+				0,
+				uipt->prim_da_len * uipt->sizeof_prim,
+			#endif
 			uipt->prim_da_arr);
+		/* TODO: Fix alignment issues (on prim_da_arr) that make glBufferSubData behave badly
+		 * when used with inf as an offset. */
 	}
 	uipt->needs_prim_buffer_sync_alloc = 0;
 	uipt->needs_prim_buffer_sync_inf = INT32_MAX;
@@ -684,7 +691,7 @@ void widget_update_slider(ui_fabric_t* ui_fabric, widget_t* widget,
 	triangle_block[3].b = (ui_vertex_t){.x = xx+v*w, .y = yy + h, .r = 0.1f, .g = 0.8f, .b = 0.0f};
 	triangle_block[3].c = (ui_vertex_t){.x = xx+v*w, .y = yy    , .r = 0.1f, .g = 0.8f, .b = 0.0f};
 	uipt_needs_sync(&ui_fabric->ui_triangle_table, widget->slider.triangle_block_index);
-	ui_fabric->ui_triangle_table.needs_prim_buffer_sync_alloc = 1;
+	//ui_fabric->ui_triangle_table.needs_prim_buffer_sync_alloc = 1;
 	/* TODO: DO NOT use needs_prim_buffer_sync_alloc, it whould't be needed
 	 * (but for some reason it doesn't work with BufferSubData for now). */
 }
