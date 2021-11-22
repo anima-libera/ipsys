@@ -126,7 +126,7 @@ void uipt_init(uipt_t* uipt, unsigned int sizeof_prim, drawcall_callback_t drawc
 	glGenBuffers(1, &uipt->prim_opengl_buffer_id);
 	glBindBuffer(GL_ARRAY_BUFFER, uipt->prim_opengl_buffer_id);
 	glBufferData(GL_ARRAY_BUFFER, 0, uipt->prim_da_arr, GL_DYNAMIC_DRAW);
-	uipt->needs_prim_buffer_sync_inf = 0;
+	uipt->needs_prim_buffer_sync_inf = INT32_MAX;
 	uipt->needs_prim_buffer_sync_sup = 0;
 	uipt->needs_prim_buffer_sync_alloc = 0;
 	uipt->sizeof_prim = sizeof_prim;
@@ -179,8 +179,9 @@ void uipt_draw(uipt_t* uipt, void* callback_data)
 			uipt->prim_da_len * uipt->sizeof_prim, uipt->prim_da_arr,
 			GL_DYNAMIC_DRAW);
 	}
-	else if (uipt->needs_prim_buffer_sync_sup > 0)
+	else if (uipt->needs_prim_buffer_sync_sup >= uipt->needs_prim_buffer_sync_inf)
 	{
+		fprintf(stderr, "buffer_sync %d %d\n", uipt->needs_prim_buffer_sync_inf, uipt->needs_prim_buffer_sync_sup);
 		glBindBuffer(GL_ARRAY_BUFFER, uipt->prim_opengl_buffer_id);
 		glBufferSubData(GL_ARRAY_BUFFER,
 			uipt->needs_prim_buffer_sync_inf * uipt->sizeof_prim,
@@ -188,7 +189,7 @@ void uipt_draw(uipt_t* uipt, void* callback_data)
 			uipt->prim_da_arr);
 	}
 	uipt->needs_prim_buffer_sync_alloc = 0;
-	uipt->needs_prim_buffer_sync_inf = 0;
+	uipt->needs_prim_buffer_sync_inf = INT32_MAX;
 	uipt->needs_prim_buffer_sync_sup = 0;
 
 	uipt->drawcall_callback(uipt->prim_opengl_buffer_id, uipt->prim_da_len, callback_data);
@@ -199,7 +200,7 @@ void uipt_needs_sync(uipt_t* uipt, unsigned int block_index)
 	unsigned int inf = uipt->block_da_arr[block_index].index;
 	unsigned int sup = inf + uipt->block_da_arr[block_index].len - 1;
 
-	if (uipt->needs_prim_buffer_sync_sup == 0)
+	if (uipt->needs_prim_buffer_sync_sup < uipt->needs_prim_buffer_sync_inf)
 	{
 		uipt->needs_prim_buffer_sync_inf = inf;
 		uipt->needs_prim_buffer_sync_sup = sup;
@@ -449,14 +450,18 @@ typedef struct ui_fabric_t ui_fabric_t;
 
 enum widget_type_t
 {
-	WIDGET_SLIDER,
 	WIDGET_BUTTON,
+	WIDGET_SLIDER,
 };
 typedef enum widget_type_t widget_type_t;
 
 struct widget_slider_t
 {
-	int uwu;
+	unsigned int line_block_index;
+	unsigned int triangle_block_index;
+	gstring_t gstring;
+	void (*clic_callback)(void);
+	float value;
 };
 typedef struct widget_slider_t widget_slider_t;
 
@@ -475,8 +480,8 @@ struct widget_t
 	widget_type_t type;
 	union
 	{
-		widget_slider_t slider;
 		widget_button_t button;
+		widget_slider_t slider;
 	};
 };
 typedef struct widget_t widget_t;
@@ -543,6 +548,7 @@ void widget_reposition_button(ui_fabric_t* ui_fabric, widget_t* widget,
 	line_block[2].b = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
 	line_block[3].a = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
 	line_block[3].b = (ui_vertex_t){.x = xx,     .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	uipt_needs_sync(&ui_fabric->ui_line_table, widget->button.line_block_index);
 
 	ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_fabric->ui_triangle_table,
 		widget->button.triangle_block_index);
@@ -552,6 +558,7 @@ void widget_reposition_button(ui_fabric_t* ui_fabric, widget_t* widget,
 	triangle_block[1].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
 	triangle_block[1].b = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
 	triangle_block[1].c = (ui_vertex_t){.x = xx + w, .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	uipt_needs_sync(&ui_fabric->ui_triangle_table, widget->button.triangle_block_index);
 
 	gchar_t* gchar_block = uipt_get_prim_block(&ui_fabric->ui_gchar_table,
 		widget->button.gstring.gchar_block_index);
@@ -561,12 +568,134 @@ void widget_reposition_button(ui_fabric_t* ui_fabric, widget_t* widget,
 		floorf(y + (h - widget->button.gstring.h) / 2.0f));
 }
 
+void widget_init_slider(ui_fabric_t* ui_fabric, widget_t* widget, float value,
+	float x, float y, float w, float h, char* text, void (*clic_callback)(void))
+{
+	widget->w = w;
+	widget->h = h;
+
+	widget->type = WIDGET_SLIDER;
+
+	widget->slider.value = value;
+
+	widget->slider.clic_callback = clic_callback;
+
+	const float xx = x + 0.5f;
+	const float yy = y + 0.5f;
+	const float v = widget->slider.value;
+
+	widget->slider.line_block_index = uipt_alloc_prim_block(&ui_fabric->ui_line_table, 4);
+	ui_line_t* line_block = uipt_get_prim_block(&ui_fabric->ui_line_table,
+		widget->slider.line_block_index);
+	line_block[0].a = (ui_vertex_t){.x = xx,     .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[0].b = (ui_vertex_t){.x = xx + w, .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[1].a = (ui_vertex_t){.x = xx + w, .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[1].b = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[2].a = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[2].b = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[3].a = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[3].b = (ui_vertex_t){.x = xx,     .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+
+	widget->slider.triangle_block_index = uipt_alloc_prim_block(&ui_fabric->ui_triangle_table, 4);
+	ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_fabric->ui_triangle_table,
+		widget->slider.triangle_block_index);
+	triangle_block[0].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[0].b = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[0].c = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[1].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[1].b = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[1].c = (ui_vertex_t){.x = xx + w, .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[2].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[2].b = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[2].c = (ui_vertex_t){.x = xx+v*w, .y = yy + h, .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[3].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[3].b = (ui_vertex_t){.x = xx+v*w, .y = yy + h, .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[3].c = (ui_vertex_t){.x = xx+v*w, .y = yy    , .r = 0.1f, .g = 0.8f, .b = 0.0f};
+
+	float gstring_w, gstring_h;
+	gstring_predict_dimensions(text, &ui_fabric->font, &gstring_w, &gstring_h);
+
+	widget->slider.gstring = alloc_gstring(&ui_fabric->ui_gchar_table,
+		text, &ui_fabric->font,
+		floorf(x + (w - gstring_w) / 2.0f), floorf(y + (h - gstring_h) / 2.0f));
+}
+
+void widget_reposition_slider(ui_fabric_t* ui_fabric, widget_t* widget,
+	float x, float y, float w, float h)
+{
+	widget->w = w;
+	widget->h = h;
+
+	const float xx = x + 0.5f;
+	const float yy = y + 0.5f;
+	const float v = widget->slider.value;
+
+	ui_line_t* line_block = uipt_get_prim_block(&ui_fabric->ui_line_table,
+		widget->slider.line_block_index);
+	line_block[0].a = (ui_vertex_t){.x = xx,     .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[0].b = (ui_vertex_t){.x = xx + w, .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[1].a = (ui_vertex_t){.x = xx + w, .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[1].b = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[2].a = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[2].b = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[3].a = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	line_block[3].b = (ui_vertex_t){.x = xx,     .y = yy,     .r = 1.0f, .g = 1.0f, .b = 1.0f};
+	uipt_needs_sync(&ui_fabric->ui_line_table, widget->slider.line_block_index);
+
+	ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_fabric->ui_triangle_table,
+		widget->slider.triangle_block_index);
+	triangle_block[0].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[0].b = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[0].c = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[1].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[1].b = (ui_vertex_t){.x = xx + w, .y = yy + h, .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[1].c = (ui_vertex_t){.x = xx + w, .y = yy    , .r = 0.0f, .g = 0.3f, .b = 0.2f};
+	triangle_block[2].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[2].b = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[2].c = (ui_vertex_t){.x = xx+v*w, .y = yy + h, .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[3].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[3].b = (ui_vertex_t){.x = xx+v*w, .y = yy + h, .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[3].c = (ui_vertex_t){.x = xx+v*w, .y = yy    , .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	uipt_needs_sync(&ui_fabric->ui_triangle_table, widget->slider.triangle_block_index);
+
+	gchar_t* gchar_block = uipt_get_prim_block(&ui_fabric->ui_gchar_table,
+		widget->slider.gstring.gchar_block_index);
+	init_gstring(&widget->slider.gstring, gchar_block,
+		widget->slider.gstring.string, &ui_fabric->font,
+		floorf(x + (w - widget->slider.gstring.w) / 2.0f),
+		floorf(y + (h - widget->slider.gstring.h) / 2.0f));
+}
+
+void widget_update_slider(ui_fabric_t* ui_fabric, widget_t* widget,
+	float x, float y)
+{
+	const float xx = x + 0.5f;
+	const float yy = y + 0.5f;
+	const float w = widget->w;
+	const float h = widget->h;
+	const float v = widget->slider.value;
+
+	ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_fabric->ui_triangle_table,
+		widget->slider.triangle_block_index);
+	triangle_block[2].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[2].b = (ui_vertex_t){.x = xx,     .y = yy + h, .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[2].c = (ui_vertex_t){.x = xx+v*w, .y = yy + h, .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[3].a = (ui_vertex_t){.x = xx,     .y = yy    , .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[3].b = (ui_vertex_t){.x = xx+v*w, .y = yy + h, .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	triangle_block[3].c = (ui_vertex_t){.x = xx+v*w, .y = yy    , .r = 0.1f, .g = 0.8f, .b = 0.0f};
+	uipt_needs_sync(&ui_fabric->ui_triangle_table, widget->slider.triangle_block_index);
+	ui_fabric->ui_triangle_table.needs_prim_buffer_sync_alloc = 1;
+	/* TODO: DO NOT use needs_prim_buffer_sync_alloc, it whould't be needed
+	 * (but for some reason it doesn't work with BufferSubData for now). */
+}
+
 int widget_has_coords(widget_t* widget, float widget_x, float widget_y,
 	float coords_x, float coords_y)
 {
 	switch (widget->type)
 	{
 		case WIDGET_BUTTON:
+		case WIDGET_SLIDER:
 			return widget_x <= coords_x && coords_x <= widget_x + widget->w &&
 				widget_y <= coords_y && coords_y <= widget_y + widget->h;
 		break;
@@ -574,9 +703,39 @@ int widget_has_coords(widget_t* widget, float widget_x, float widget_y,
 	return 0;
 }
 
+void widget_reposition(ui_fabric_t* ui_fabric, widget_t* widget,
+	float x, float y, float w, float h)
+{
+	switch (widget->type)
+	{
+		case WIDGET_BUTTON:
+			widget_reposition_button(ui_fabric, widget, x, y, w, h);
+		break;
+		case WIDGET_SLIDER:
+			widget_reposition_slider(ui_fabric, widget, x, y, w, h);
+		break;
+		default:
+			assert(0);
+		break;
+	}
+}
+
+int g_callback_button_test_flag = 0;
 void callback_test(void)
 {
-	printf("Hello callback!\n");
+	g_callback_button_test_flag = 1;
+}
+
+int g_callback_slider_1_flag = 0;
+void callback_slider_1(void)
+{
+	g_callback_slider_1_flag = 1;
+}
+
+int g_callback_slider_2_flag = 0;
+void callback_slider_2(void)
+{
+	g_callback_slider_2_flag = 1;
 }
 
 struct pos_widget_t
@@ -602,18 +761,32 @@ void widget_manager_give(widget_manager_t* wm, ui_fabric_t* ui_fabric, widget_t*
 	posw->widget = widget;
 	posw->x = wm->next_x;
 	posw->y = wm->next_y;
-	widget_reposition_button(ui_fabric, widget, posw->x, posw->y, widget->w, widget->h);
-	wm->next_y += widget->h + 20.0f;
+	widget_reposition(ui_fabric, widget, posw->x, posw->y, widget->w, widget->h);
+	wm->next_y -= widget->h + 20.0f;
 }
 
-int widget_manager_clic(widget_manager_t* wm, float x, float y)
+int widget_manager_clic(widget_manager_t* wm, ui_fabric_t* ui_fabric, float x, float y)
 {
 	for (unsigned int i = 0; i < wm->len; i++)
 	{
 		if (widget_has_coords(wm->arr[i].widget,
 			wm->arr[i].x, wm->arr[i].y, x, y))
 		{
-			wm->arr[i].widget->button.clic_callback();
+			switch (wm->arr[i].widget->type)
+			{
+				case WIDGET_BUTTON:
+					wm->arr[i].widget->button.clic_callback();
+				break;
+				case WIDGET_SLIDER:
+					wm->arr[i].widget->slider.clic_callback();
+					wm->arr[i].widget->slider.value = (x - wm->arr[i].x) / wm->arr[i].widget->w;
+					widget_update_slider(ui_fabric, wm->arr[i].widget,
+						wm->arr[i].x, wm->arr[i].y);
+				break;
+				default:
+					assert(0);
+				break;
+			}
 			return 1;
 		}
 	}
@@ -1257,7 +1430,7 @@ int main(int argc, const char** argv)
 
 	/* UI setup. */
 
-	#if 1
+	#if 0
 
 	const float ui_margin = 6.5f;
 	const float ui_size = 20.0f;
@@ -1391,13 +1564,23 @@ int main(int argc, const char** argv)
 
 	/* Widget test. */
 
-	widget_manager_t wm = {.next_x = 20.0f, .next_y = 20.0f};
+	widget_manager_t wm = {.next_x = 20.0f, .next_y = 800.0f - 40.0f};
 
-	widget_t widget_button_test_arr[4];
-	for (unsigned int i = 0; i < 4; i++)
+	widget_t widget_slider_test_arr[2];
+	widget_init_slider(&ui_fabric, &widget_slider_test_arr[0],
+		1.0f - g_setting_read_fade_factor / SETTING_FADE_FACTOR_MAX,
+		0.0f, 0.0f, 760.0f, 20.0f, "TRACE", callback_slider_1);
+	widget_manager_give(&wm, &ui_fabric, &widget_slider_test_arr[0]);
+	widget_init_slider(&ui_fabric, &widget_slider_test_arr[1],
+		((float)iteration_number_per_frame - 1.0f) / ((float)(MAX_ITER_PER_FRAME) - 1.0f),
+		0.0f, 0.0f, 760.0f, 20.0f, "ITERATION NUMBER PER FRAME", callback_slider_2);
+	widget_manager_give(&wm, &ui_fabric, &widget_slider_test_arr[1]);
+	
+	widget_t widget_button_test_arr[1];
+	for (unsigned int i = 0; i < 1; i++)
 	{
 		widget_init_button(&ui_fabric, &widget_button_test_arr[i],
-			0.0f, 0.0f, 200.0f, 20.0f, "TEXT UWU", callback_test);
+			0.0f, 0.0f, 200.0f, 20.0f, "RANDOMIZE LAWS", callback_test);
 		widget_manager_give(&wm, &ui_fabric, &widget_button_test_arr[i]);
 	}
 
@@ -1417,18 +1600,18 @@ int main(int argc, const char** argv)
 					running = 0;
 				break;
 
-				#if 1
 				case SDL_MOUSEBUTTONDOWN:
 					if (event.button.x >= 800)
 					{
 						const float x = event.button.x - 800;
 						const float y = 800 - event.button.y;
 
-						if (widget_manager_clic(&wm, x, y))
+						if (widget_manager_clic(&wm, &ui_fabric, x, y))
 						{
 							break;
 						}
 
+						#if 0
 						for (unsigned int i = 0; i < BAR_NUMBER; i++)
 						{
 							float ui_setup_y = 800.0f - (float)i * (2.0f * ui_margin + ui_size);
@@ -1476,6 +1659,7 @@ int main(int argc, const char** argv)
 									ui_rect_vertex_array, GL_STATIC_DRAW);
 							}
 						}
+						#endif
 					}
 					else
 					{
@@ -1529,7 +1713,6 @@ int main(int argc, const char** argv)
 						glUnmapBuffer(GL_ARRAY_BUFFER);
 					}
 				break;
-				#endif
 
 				case SDL_KEYDOWN:
 					switch (event.key.keysym.sym)
@@ -1615,6 +1798,31 @@ int main(int argc, const char** argv)
 			}
 		}
 
+		if (g_callback_slider_1_flag)
+		{
+			g_callback_slider_1_flag = 0;
+			const float value = (1.0f - widget_slider_test_arr[0].slider.value) *
+				SETTING_FADE_FACTOR_MAX;
+			setting_set_fade_factor(value);
+		}
+		if (g_callback_slider_2_flag)
+		{
+			g_callback_slider_2_flag = 0;
+			const unsigned int value =
+				roundf(widget_slider_test_arr[1].slider.value *
+					((float)MAX_ITER_PER_FRAME - 1.0f) + 1.0f);
+			iteration_number_per_frame = value;
+		}
+		if (g_callback_button_test_flag)
+		{
+			g_callback_button_test_flag = 0;
+			randomize_pils(pil_set_table, tn, &rg);
+			glBindBuffer(GL_ARRAY_BUFFER, buf_pil_set_id);
+			glBufferData(GL_ARRAY_BUFFER,
+				tn*tn * sizeof(pil_set_t),
+				pil_set_table, GL_STATIC_DRAW);
+		}
+
 		t++;
 
 		/* Render the UI. */
@@ -1637,7 +1845,7 @@ int main(int argc, const char** argv)
 				(void*)offsetof(ui_vertex_t, r));
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-			#if 1
+			#if 0
 			/* Render rect bar filling. */
 			glBindBuffer(GL_ARRAY_BUFFER, buf_ui_rect_id);
 			glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
