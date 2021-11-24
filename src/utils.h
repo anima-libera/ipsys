@@ -7,6 +7,8 @@
 #ifndef IPSYS_HEADER_UTILS__
 #define IPSYS_HEADER_UTILS__
 
+#include <stdlib.h>
+
 /* The true fundamental circle constant. */
 #define TAU 6.28318530717f
 
