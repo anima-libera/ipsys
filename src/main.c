@@ -462,12 +462,14 @@ enum widget_type_t
 };
 typedef enum widget_type_t widget_type_t;
 
+typedef struct widget_t widget_t;
+
 struct widget_slider_t
 {
 	unsigned int line_block_index;
 	unsigned int triangle_block_index;
 	gstring_t gstring;
-	void (*clic_callback)(void);
+	void (*clic_callback)(widget_t* widget);
 	float value;
 };
 typedef struct widget_slider_t widget_slider_t;
@@ -477,7 +479,7 @@ struct widget_button_t
 	unsigned int line_block_index;
 	unsigned int triangle_block_index;
 	gstring_t gstring;
-	void (*clic_callback)(void);
+	void (*clic_callback)(widget_t* widget);
 };
 typedef struct widget_button_t widget_button_t;
 
@@ -491,10 +493,9 @@ struct widget_t
 		widget_slider_t slider;
 	};
 };
-typedef struct widget_t widget_t;
 
 void widget_init_button(ui_fabric_t* ui_fabric, widget_t* widget,
-	float x, float y, float w, float h, char* text, void (*clic_callback)(void))
+	float x, float y, float w, float h, char* text, void (*clic_callback)(widget_t* widget))
 {
 	widget->w = w;
 	widget->h = h;
@@ -576,7 +577,7 @@ void widget_reposition_button(ui_fabric_t* ui_fabric, widget_t* widget,
 }
 
 void widget_init_slider(ui_fabric_t* ui_fabric, widget_t* widget, float value,
-	float x, float y, float w, float h, char* text, void (*clic_callback)(void))
+	float x, float y, float w, float h, char* text, void (*clic_callback)(widget_t* widget))
 {
 	widget->w = w;
 	widget->h = h;
@@ -728,21 +729,25 @@ void widget_reposition(ui_fabric_t* ui_fabric, widget_t* widget,
 }
 
 int g_callback_button_test_flag = 0;
-void callback_test(void)
+void callback_test(widget_t* widget)
 {
 	g_callback_button_test_flag = 1;
 }
 
+#define MAX_ITER_PER_FRAME 32
+
 int g_callback_slider_1_flag = 0;
-void callback_slider_1(void)
+void callback_slider_1(widget_t* widget)
 {
 	g_callback_slider_1_flag = 1;
 }
 
 int g_callback_slider_2_flag = 0;
-void callback_slider_2(void)
+void callback_slider_2(widget_t* widget)
 {
 	g_callback_slider_2_flag = 1;
+	widget->slider.value = roundf(widget->slider.value * (float)(MAX_ITER_PER_FRAME - 1)) /
+		(float)(MAX_ITER_PER_FRAME - 1);
 }
 
 struct pos_widget_t
@@ -782,11 +787,11 @@ int widget_manager_clic(widget_manager_t* wm, ui_fabric_t* ui_fabric, float x, f
 			switch (wm->arr[i].widget->type)
 			{
 				case WIDGET_BUTTON:
-					wm->arr[i].widget->button.clic_callback();
+					wm->arr[i].widget->button.clic_callback(wm->arr[i].widget);
 				break;
 				case WIDGET_SLIDER:
-					wm->arr[i].widget->slider.clic_callback();
 					wm->arr[i].widget->slider.value = (x - wm->arr[i].x) / wm->arr[i].widget->w;
+					wm->arr[i].widget->slider.clic_callback(wm->arr[i].widget);
 					widget_update_slider(ui_fabric, wm->arr[i].widget,
 						wm->arr[i].x, wm->arr[i].y);
 				break;
@@ -1029,7 +1034,6 @@ int main(int argc, const char** argv)
 
 	setting_set_fade_factor(0.05f);
 
-	#define MAX_ITER_PER_FRAME 32
 	unsigned int iteration_number_per_frame = 4;
 
 	/* Universe rendering setup. */
@@ -1851,32 +1855,6 @@ int main(int argc, const char** argv)
 				GL_FALSE, sizeof(ui_vertex_t),
 				(void*)offsetof(ui_vertex_t, r));
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-			#if 0
-			/* Render rect bar filling. */
-			glBindBuffer(GL_ARRAY_BUFFER, buf_ui_rect_id);
-			glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
-				GL_FALSE, sizeof(ui_vertex_t),
-				(void*)offsetof(ui_vertex_t, x));
-			glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
-				GL_FALSE, sizeof(ui_vertex_t),
-				(void*)offsetof(ui_vertex_t, r));
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf_ui_rect_index_id);
-			glDrawElements(GL_TRIANGLES, 6 * BAR_NUMBER, GL_UNSIGNED_INT,
-				(void*)0);
-
-			/* Render rect lines. */
-			glBindBuffer(GL_ARRAY_BUFFER, buf_ui_line_id);
-			glVertexAttribPointer(ATTRIB_LOCATION_POS, 2, GL_FLOAT,
-				GL_FALSE, sizeof(ui_vertex_t),
-				(void*)offsetof(ui_vertex_t, x));
-			glVertexAttribPointer(ATTRIB_LOCATION_COLOR, 3, GL_FLOAT,
-				GL_FALSE, sizeof(ui_vertex_t),
-				(void*)offsetof(ui_vertex_t, r));
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf_ui_line_index_id);
-			glDrawElements(GL_LINES, 8 * BAR_NUMBER, GL_UNSIGNED_INT,
-				(void*)0);
-			#endif
 			
 			glDisableVertexAttribArray(ATTRIB_LOCATION_POS);
 			glDisableVertexAttribArray(ATTRIB_LOCATION_COLOR);

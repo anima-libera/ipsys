@@ -56,8 +56,8 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 
 ## TODO
 
-- Text rendering for the UI.
 - More UI components to tinker with the settings.
+  - Marks on sliders that only accept a discrete set of values.
 - Make the text-based modular data representation format even better.
   - Config, setting set, color theme, rules, rule generators, particle positions, all of that in different blocks.
   - Each rule should be independant from the others, and optional.
