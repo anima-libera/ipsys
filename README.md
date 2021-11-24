@@ -22,19 +22,19 @@ python3 _comp.py
 
 Supported compilers are GCC (`--compiler=gcc` which is the default) and Clang (`--compiler=clang`).
 
-Add the `-l` option *at the end* means to execute the binary if compilation succeeded. Any argument that comes after the `-l` is instead given to the binary as its command line arguments.
+Add the `-l` option *at the end* to execute the binary if compilation succeeded. Any argument that comes after the `-l` is instead given to the binary as its command line arguments.
 
-Use the `--help` option to get a list of options.
+Use the `--help` option to get a list of build system options.
 
 ### Dependencies
 
 - [Python 3](https://www.python.org/) for the build system
 - [SDL2](https://www.libsdl.org/) (maybe read [this](https://lazyfoo.net/tutorials/SDL/01_hello_SDL/linux/index.php))
-- [GLEW](http://glew.sourceforge.net/) but only if building with `--use-glew`
+- [GLEW](http://glew.sourceforge.net/) but only if building with `--use-glew` which is not necessary
 
 ## Controls
 
-At runtime, the ways to interact with the simulation and rendering are listed here:
+At runtime, it is possible to interact with the simulation and rendering via the controls listed here:
 
 - The first bar in the ui panel controls the intensity of fading.
 - The second bar in the ui panel controls the number of physical iterations performed between each frames.
@@ -47,7 +47,7 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 - The escape key terminates execution (same as closing the window).
 - The T key switches between the rendering of each iteration and each frame.
 - The W key toggles fading.
-- The S key saves the current rule set to a file.
+- The S key saves the current rule set to a file (the file is always named `uwu.ipsysd` and it has to be renamed to not be overwritten by the next save).
 
 ## Command line interface
 
@@ -121,3 +121,7 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 ### Rerwite it in Rust ?
 
 Actually why not one day~
+
+## Wanna contribute ? Report an issue ? Suggest a feature ? Talk about it ?
+
+Sure go ahead! Don't hesitate ^^.

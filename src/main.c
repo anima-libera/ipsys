@@ -1441,118 +1441,6 @@ int main(int argc, const char** argv)
 
 	/* UI setup. */
 
-	#if 0
-
-	const float ui_margin = 6.5f;
-	const float ui_size = 20.0f;
-	const float ui_length = (800.0f - ui_margin) - ui_margin;
-
-	#define BAR_NUMBER 2
-
-	ui_vertex_t ui_line_vertex_array[BAR_NUMBER * 4] = {
-		{.x = ui_margin,          .y = 800.0f - ui_margin          },
-		{.x = 800.0f - ui_margin, .y = 800.0f - ui_margin          },
-		{.x = 800.0f - ui_margin, .y = 800.0f - ui_margin - ui_size},
-		{.x = ui_margin,          .y = 800.0f - ui_margin - ui_size},
-	};
-
-	for (unsigned int i = 0; i < BAR_NUMBER; i++)
-	{
-		float ui_setup_y = 800.0f - (float)i * (2.0f * ui_margin + ui_size);
-		ui_line_vertex_array[i * 4 + 0].x = ui_margin;
-		ui_line_vertex_array[i * 4 + 1].x = 800.0f - ui_margin;
-		ui_line_vertex_array[i * 4 + 2].x = 800.0f - ui_margin;
-		ui_line_vertex_array[i * 4 + 3].x = ui_margin;
-		ui_line_vertex_array[i * 4 + 0].y = ui_setup_y - ui_margin;
-		ui_line_vertex_array[i * 4 + 1].y = ui_setup_y - ui_margin;
-		ui_line_vertex_array[i * 4 + 2].y = ui_setup_y - ui_margin - ui_size;
-		ui_line_vertex_array[i * 4 + 3].y = ui_setup_y - ui_margin - ui_size;
-	}
-
-	for (unsigned int i = 0; i < BAR_NUMBER * 4; i++)
-	{
-		ui_line_vertex_array[i].r = 1.0f;
-		ui_line_vertex_array[i].g = 1.0f;
-		ui_line_vertex_array[i].b = 1.0f;
-	}
-
-	GLuint buf_ui_line_id;
-	glGenBuffers(1, &buf_ui_line_id);
-	glBindBuffer(GL_ARRAY_BUFFER, buf_ui_line_id);
-	glBufferData(GL_ARRAY_BUFFER, sizeof ui_line_vertex_array,
-		ui_line_vertex_array, GL_STATIC_DRAW);
-
-	GLuint ui_line_vertex_index_array[BAR_NUMBER * 8];
-	for (unsigned int i = 0; i < BAR_NUMBER; i++)
-	{
-		ui_line_vertex_index_array[i * 8 + 0] = i * 4 + 0;
-		ui_line_vertex_index_array[i * 8 + 1] = i * 4 + 1;
-		ui_line_vertex_index_array[i * 8 + 2] = i * 4 + 1;
-		ui_line_vertex_index_array[i * 8 + 3] = i * 4 + 2;
-		ui_line_vertex_index_array[i * 8 + 4] = i * 4 + 2;
-		ui_line_vertex_index_array[i * 8 + 5] = i * 4 + 3;
-		ui_line_vertex_index_array[i * 8 + 6] = i * 4 + 3;
-		ui_line_vertex_index_array[i * 8 + 7] = i * 4 + 0;
-	}
-
-	GLuint buf_ui_line_index_id;
-	glGenBuffers(1, &buf_ui_line_index_id);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf_ui_line_index_id);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof ui_line_vertex_index_array,
-		ui_line_vertex_index_array, GL_STATIC_DRAW);
-
-	ui_vertex_t ui_rect_vertex_array[BAR_NUMBER * 4];
-
-	float ui_rect_filled_x[BAR_NUMBER] = {
-		ui_length * (1.0f - g_setting_read_fade_factor / SETTING_FADE_FACTOR_MAX),
-		ui_length * (1.0f - ((float)iteration_number_per_frame - 1.0f) / ((float)(MAX_ITER_PER_FRAME) - 1.0f)),
-	};
-
-	for (unsigned int i = 0; i < BAR_NUMBER; i++)
-	{
-		float ui_setup_y = 800.0f - (float)i * (2.0f * ui_margin + ui_size);
-		ui_rect_vertex_array[i * 4 + 0].x = 800.0f - ui_margin - ui_rect_filled_x[i];
-		ui_rect_vertex_array[i * 4 + 1].x = ui_margin;
-		ui_rect_vertex_array[i * 4 + 2].x = 800.0f - ui_margin - ui_rect_filled_x[i];
-		ui_rect_vertex_array[i * 4 + 3].x = ui_margin;
-		ui_rect_vertex_array[i * 4 + 0].y = ui_setup_y - ui_margin;
-		ui_rect_vertex_array[i * 4 + 1].y = ui_setup_y - ui_margin;
-		ui_rect_vertex_array[i * 4 + 2].y = ui_setup_y - ui_margin - ui_size;
-		ui_rect_vertex_array[i * 4 + 3].y = ui_setup_y - ui_margin - ui_size;
-	}
-
-	for (unsigned int i = 0; i < BAR_NUMBER * 4; i++)
-	{
-		ui_rect_vertex_array[i].r = 0.02f;
-		ui_rect_vertex_array[i].g = 0.8f;
-		ui_rect_vertex_array[i].b = 0.4f;
-	}
-
-	GLuint buf_ui_rect_id;
-	glGenBuffers(1, &buf_ui_rect_id);
-	glBindBuffer(GL_ARRAY_BUFFER, buf_ui_rect_id);
-	glBufferData(GL_ARRAY_BUFFER, sizeof ui_rect_vertex_array,
-		ui_rect_vertex_array, GL_STATIC_DRAW);
-
-	GLuint ui_rect_vertex_index_array[BAR_NUMBER * 6];
-	for (unsigned int i = 0; i < BAR_NUMBER; i++)
-	{
-		ui_rect_vertex_index_array[i * 6 + 0] = i * 4 + 0;
-		ui_rect_vertex_index_array[i * 6 + 1] = i * 4 + 1;
-		ui_rect_vertex_index_array[i * 6 + 2] = i * 4 + 2;
-		ui_rect_vertex_index_array[i * 6 + 3] = i * 4 + 1;
-		ui_rect_vertex_index_array[i * 6 + 4] = i * 4 + 2;
-		ui_rect_vertex_index_array[i * 6 + 5] = i * 4 + 3;
-	}
-
-	GLuint buf_ui_rect_index_id;
-	glGenBuffers(1, &buf_ui_rect_index_id);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf_ui_rect_index_id);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof ui_rect_vertex_index_array,
-		ui_rect_vertex_index_array, GL_STATIC_DRAW);
-
-	#endif
-
 	ui_vertex_t ui_bg_vertex_array[4] = {
 		{.x = 800.0f, .y = 800.0f},
 		{.x =   0.0f, .y = 800.0f},
@@ -1572,8 +1460,6 @@ int main(int argc, const char** argv)
 	glBindBuffer(GL_ARRAY_BUFFER, buf_ui_bg_id);
 	glBufferData(GL_ARRAY_BUFFER, sizeof ui_bg_vertex_array,
 		ui_bg_vertex_array, GL_STATIC_DRAW);
-
-	/* Widget test. */
 
 	widget_manager_t wm = {.next_x = 20.0f, .next_y = 800.0f - 40.0f};
 
@@ -1621,56 +1507,6 @@ int main(int argc, const char** argv)
 						{
 							break;
 						}
-
-						#if 0
-						for (unsigned int i = 0; i < BAR_NUMBER; i++)
-						{
-							float ui_setup_y = 800.0f - (float)i * (2.0f * ui_margin + ui_size);
-
-							if (ui_margin <= x &&
-								x <= 800.0f - ui_margin &&
-								ui_setup_y - ui_margin - ui_size <= y &&
-								y <= ui_setup_y - ui_margin)
-							{
-								if (i == 0)
-								{
-									const float value =
-										(x - ui_margin) / ui_length *
-										SETTING_FADE_FACTOR_MAX;
-									setting_set_fade_factor(value);
-
-									ui_rect_filled_x[0] =
-										ui_length *
-										(1.0f - g_setting_read_fade_factor /
-											SETTING_FADE_FACTOR_MAX);
-								}
-								else if (i == 1)
-								{
-									const unsigned int value =
-										roundf((x - ui_margin) / ui_length * ((float)(MAX_ITER_PER_FRAME) - 1.0f) + 1.0f);
-									iteration_number_per_frame = value;
-								
-									ui_rect_filled_x[1] =
-										ui_length *
-										(1.0f - ((float)iteration_number_per_frame - 1.0f) / ((float)(MAX_ITER_PER_FRAME) - 1.0f));
-								}
-
-								ui_rect_vertex_array[i * 4 + 0].x = 800.0f - ui_margin - ui_rect_filled_x[i];
-								ui_rect_vertex_array[i * 4 + 1].x = ui_margin;
-								ui_rect_vertex_array[i * 4 + 2].x = 800.0f - ui_margin - ui_rect_filled_x[i];
-								ui_rect_vertex_array[i * 4 + 3].x = ui_margin;
-								ui_rect_vertex_array[i * 4 + 0].y = ui_setup_y - ui_margin;
-								ui_rect_vertex_array[i * 4 + 1].y = ui_setup_y - ui_margin;
-								ui_rect_vertex_array[i * 4 + 2].y = ui_setup_y - ui_margin - ui_size;
-								ui_rect_vertex_array[i * 4 + 3].y = ui_setup_y - ui_margin - ui_size;
-
-								glBindBuffer(GL_ARRAY_BUFFER, buf_ui_rect_id);
-								glBufferData(GL_ARRAY_BUFFER,
-									BAR_NUMBER * 4 * sizeof(ui_vertex_t),
-									ui_rect_vertex_array, GL_STATIC_DRAW);
-							}
-						}
-						#endif
 					}
 					else
 					{
