@@ -83,6 +83,9 @@ At runtime, the ways to interact with the simulation and rendering are listed he
 - View the "force" fields and motion fields.
 - Display the rules.
 - Better type changing rules and rule generation (using a changing graph).
+- Rule generation and modification UI.
+  - A rule should be the result (at the root) of a tree of modifications (add some interval constant, multiply with some simple function, add these two sub-rules, etc.).
+  - Each of these modifications should have a UI component allowing for visualization and tinkering.
 - Fix memory leaks when hitting Q.
 - Better interaction abilities with the particles.
 - Adding walls, wind zones, pipes, etc.
