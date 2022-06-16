@@ -286,7 +286,7 @@ int main(int argc, char const** argv)
 	#define WORK_GROUP_SIZE 256
 
 	setting_set_fade_factor(0.05f);
-	setting_set_part_radius(0.006f);
+	setting_set_part_display_radius(0.006f);
 
 	unsigned int iteration_number_per_frame = 4;
 
@@ -379,8 +379,8 @@ int main(int argc, char const** argv)
 		0.0f, 0.0f, 760.0f, 20.0f, "ITERATION NUMBER PER FRAME", callback_slider_2);
 	widget_manager_give(&wm, &ui_fabric, &widget_slider_test_arr[1]);
 	widget_init_slider(&ui_fabric, &widget_slider_test_arr[2],
-		g_setting_read_part_radius / SETTING_PART_RADIUS_MAX,
-		0.0f, 0.0f, 760.0f, 20.0f, "PARTICLE RADIUS", callback_slider_3);
+		g_setting_read_part_display_radius / SETTING_PART_DISPLAY_RADIUS_MAX,
+		0.0f, 0.0f, 760.0f, 20.0f, "PARTICLE DISPLAY RADIUS", callback_slider_3);
 	widget_manager_give(&wm, &ui_fabric, &widget_slider_test_arr[2]);
 	
 	widget_t widget_button_test_arr[1];
@@ -574,8 +574,8 @@ int main(int argc, char const** argv)
 		{
 			g_callback_slider_3_flag = 0;
 			float const value = widget_slider_test_arr[2].slider.value *
-				SETTING_PART_RADIUS_MAX;
-			setting_set_part_radius(value);
+				SETTING_PART_DISPLAY_RADIUS_MAX;
+			setting_set_part_display_radius(value);
 		}
 		if (g_callback_button_test_flag)
 		{
