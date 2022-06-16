@@ -51,14 +51,14 @@ void callback_slider_2(widget_t* widget)
 		(float)(MAX_ITER_PER_FRAME - 1);
 }
 
-int main(int argc, const char** argv)
+int main(int argc, char const** argv)
 {
 	l_beginning:;
 
 	/* Parse command line arguments. */
 
-	const char* arg_type_number = NULL;
-	const char* arg_ipsysd_filepath = NULL;
+	char const* arg_type_number = NULL;
+	char const* arg_ipsysd_filepath = NULL;
 	int no_universe = 0;
 
 	for (unsigned int i = 1; i < (unsigned int)argc; i++)
@@ -306,7 +306,7 @@ int main(int argc, const char** argv)
 
 		glBindFramebuffer(GL_FRAMEBUFFER, univ_fbo_double_id[i]);
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, univ_texture_double_id[i], 0);
-		const GLenum draw_buffer_array[] = {GL_COLOR_ATTACHMENT0};
+		GLenum const draw_buffer_array[] = {GL_COLOR_ATTACHMENT0};
 		glDrawBuffers(1, draw_buffer_array);
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
@@ -316,7 +316,7 @@ int main(int argc, const char** argv)
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	just_vertex_t univ_full_rect_array[4] = {
+	just_vertex_t const univ_full_rect_array[4] = {
 		{.x = +1.0f, .y = +1.0f},
 		{.x = -1.0f, .y = +1.0f},
 		{.x = +1.0f, .y = -1.0f},
@@ -398,8 +398,8 @@ int main(int argc, const char** argv)
 				case SDL_MOUSEBUTTONDOWN:
 					if (event.button.x >= 800)
 					{
-						const float x = event.button.x - 800;
-						const float y = 800 - event.button.y;
+						float const x = event.button.x - 800;
+						float const y = 800 - event.button.y;
 
 						if (widget_manager_clic(&wm, &ui_fabric, x, y))
 						{
@@ -546,14 +546,14 @@ int main(int argc, const char** argv)
 		if (g_callback_slider_1_flag)
 		{
 			g_callback_slider_1_flag = 0;
-			const float value = (1.0f - widget_slider_test_arr[0].slider.value) *
+			float const value = (1.0f - widget_slider_test_arr[0].slider.value) *
 				SETTING_FADE_FACTOR_MAX;
 			setting_set_fade_factor(value);
 		}
 		if (g_callback_slider_2_flag)
 		{
 			g_callback_slider_2_flag = 0;
-			const unsigned int value =
+			unsigned int const value =
 				roundf(widget_slider_test_arr[1].slider.value *
 					((float)MAX_ITER_PER_FRAME - 1.0f) + 1.0f);
 			iteration_number_per_frame = value;
@@ -665,7 +665,7 @@ int main(int argc, const char** argv)
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, buf_info_id);
 
 				glDispatchCompute(PARTICLE_NUMBER / WORK_GROUP_SIZE, 1, 1);
-				glUseProgram((GLuint)0);
+				glUseProgram(0);
 				glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
 
 				SWAP(GLuint, buf_part_curr_id, buf_part_next_id);

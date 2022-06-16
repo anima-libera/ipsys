@@ -62,10 +62,10 @@ struct ipsysd_kv_t
 	ipsysd_node_t value;
 };
 
-void serialize_universe_rules(const char* dst_filepath,
-	const universe_info_t* info, const pil_set_t* pil_set_table, const part_type_t* type_table);
+void serialize_universe_rules(char const* dst_filepath,
+	universe_info_t const* info, pil_set_t const* pil_set_table, part_type_t const* type_table);
 
-void deserialize_ipsysd_file(const char* src_filepath,
+void deserialize_ipsysd_file(char const* src_filepath,
 	universe_info_t* out_info, pil_set_t** out_pil_set_table, part_type_t** out_type_table);
 
 #endif /* IPSYS_HEADER_SERIALIZATION__ */

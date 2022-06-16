@@ -13,11 +13,11 @@
 /* Creates an OpenGL shader object with the given GLSL source code, then
  * compiles it and returns its id.
  * Returns 0 if compilation fails. */
-static GLuint shader_src_compile(const char* shader_src, GLuint shader_type,
-	const char* dbg_info)
+static GLuint shader_src_compile(char const* shader_src, GLuint shader_type,
+	char const* dbg_info)
 {
-	GLuint shader_id = glCreateShader(shader_type);
-	glShaderSource(shader_id, 1, (const GLchar* const*)&shader_src, NULL);
+	GLuint const shader_id = glCreateShader(shader_type);
+	glShaderSource(shader_id, 1, (GLchar const* const*)&shader_src, NULL);
 	glCompileShader(shader_id);
 	GLint compile_status = 0;
 	glGetShaderiv(shader_id, GL_COMPILE_STATUS, &compile_status);
@@ -45,7 +45,7 @@ static GLuint shader_src_compile(const char* shader_src, GLuint shader_type,
 			fprintf(stderr,
 				"OpenGL shader compilation error (%s): "
 				"\x1b[31m\"%s\"\x1b[39m\n",
-				(dbg_info != NULL) ? dbg_info : "\0", (const char*)message);
+				(dbg_info != NULL) ? dbg_info : "\0", (char const*)message);
 			free(message);
 		}
 		glDeleteShader(shader_id);
@@ -60,11 +60,11 @@ static GLuint shader_src_compile(const char* shader_src, GLuint shader_type,
  * OpenGL rendering pipeline. 
  * Returns 0 if the compilation or linkage fails. */
 static GLuint shprog_build_vgf(
-	const char* src_vert, const char* src_geom, const char* src_frag,
-	const char* dbg_vert, const char* dbg_geom, const char* dbg_frag,
-	const char* dbg_info)
+	char const* src_vert, char const* src_geom, char const* src_frag,
+	char const* dbg_vert, char const* dbg_geom, char const* dbg_frag,
+	char const* dbg_info)
 {
-	GLuint shader_vert_id = shader_src_compile(src_vert,
+	GLuint const shader_vert_id = shader_src_compile(src_vert,
 		GL_VERTEX_SHADER, dbg_vert);
 	if (shader_vert_id == 0)
 	{
@@ -81,7 +81,7 @@ static GLuint shprog_build_vgf(
 			return 0;
 		}
 	}
-	GLuint shader_frag_id = shader_src_compile(src_frag,
+	GLuint const shader_frag_id = shader_src_compile(src_frag,
 		GL_FRAGMENT_SHADER, dbg_frag);
 	if (shader_frag_id == 0)
 	{
@@ -93,7 +93,7 @@ static GLuint shprog_build_vgf(
 		return 0;
 	}
 
-	GLuint shprog_id = glCreateProgram();
+	GLuint const shprog_id = glCreateProgram();
 	glAttachShader(shprog_id, shader_vert_id);
 	if (src_geom != NULL)
 	{
@@ -128,7 +128,7 @@ static GLuint shprog_build_vgf(
 			fprintf(stderr,
 				"OpenGL shader program linkage error (%s): "
 				"\x1b[31m\"%s\"\x1b[39m\n",
-				(dbg_info != NULL) ? dbg_info : "\0", (const char*)message);
+				(dbg_info != NULL) ? dbg_info : "\0", (char const*)message);
 			free(message);
 		}
 		glDetachShader(shprog_id, shader_vert_id);
@@ -160,15 +160,15 @@ static GLuint shprog_build_vgf(
 /* Creates an OpenGL shader program object and attaches the given compute
  * shader to it, then links it and returns its id.
  * Returns 0 if the compilation or linkage fails. */
-static GLuint shprog_build_comp(const char* src_comp, const char* dbg_info)
+static GLuint shprog_build_comp(char const* src_comp, char const* dbg_info)
 {
-	GLuint shader_comp_id = shader_src_compile(src_comp,
+	GLuint const shader_comp_id = shader_src_compile(src_comp,
 		GL_COMPUTE_SHADER, dbg_info);
 	if (shader_comp_id == 0)
 	{
 		return 0;
 	}
-	GLuint shprog_id = glCreateProgram();
+	GLuint const shprog_id = glCreateProgram();
 	glAttachShader(shprog_id, shader_comp_id);
 	glLinkProgram(shprog_id);
 	GLint link_status = 0;
@@ -197,7 +197,7 @@ static GLuint shprog_build_comp(const char* src_comp, const char* dbg_info)
 			fprintf(stderr,
 				"OpenGL shader program linkage error (%s): "
 				"\x1b[31m\"%s\"\x1b[39m\n",
-				(dbg_info != NULL) ? dbg_info : "\0", (const char*)message);
+				(dbg_info != NULL) ? dbg_info : "\0", (char const*)message);
 			free(message);
 		}
 		glDetachShader(shprog_id, shader_comp_id);

@@ -47,7 +47,7 @@ struct gchar_t
 };
 typedef struct gchar_t gchar_t;
 
-void gchar_set(gchar_t* gchar, const font_t* font, char c, float x, float y);
+void gchar_set(gchar_t* gchar, font_t const* font, char c, float x, float y);
 
 /* UIPT SECTION */
 
@@ -120,10 +120,14 @@ struct gstring_t
 };
 typedef struct gstring_t gstring_t;
 
-void init_gstring(gstring_t* gstring, gchar_t* gchar_block, const char* string, const font_t* font, float x, float y);
-gstring_t alloc_gstring(uipt_t* ui_gchar_table, const char* string, const font_t* font, float x, float y);
-void gstring_predict_dimensions(const char* string, const font_t* font, float* out_w, float* out_h);
-void gstring_get_dimensions(uipt_t* ui_gchar_table, unsigned int gchar_block_index, float* out_w, float* out_h);
+void init_gstring(gstring_t* gstring, gchar_t* gchar_block,
+	char const* string, font_t const* font, float x, float y);
+gstring_t alloc_gstring(uipt_t* ui_gchar_table,
+	char const* string, font_t const* font, float x, float y);
+void gstring_predict_dimensions(char const* string, font_t const* font,
+	float* out_w, float* out_h);
+void gstring_get_dimensions(uipt_t* ui_gchar_table, unsigned int gchar_block_index,
+	float* out_w, float* out_h);
 
 /* WIDGET SECTION */
 

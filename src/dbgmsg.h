@@ -15,6 +15,6 @@ void disable_opengl_dbgmsg(void);
 /* Prints an error message to stderr.
  * Should be called with the name of SDL2 function that failed,
  * or a description of the operation involving SDL2 that failed. */
-void error_sdl2_fail(const char* operation);
+void error_sdl2_fail(char const* operation);
 
 #endif /* IPSYS_HEADER_DBGMSG__ */

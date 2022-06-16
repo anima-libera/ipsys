@@ -41,14 +41,14 @@ void ipsysdify_version(ipsysd_node_t* out_node,
 }
 
 void ipsysdify_ruleset_name(ipsysd_node_t* out_node,
-	const char* ruleset_name)
+	char* ruleset_name)
 {
 	out_node->type = IPSYSD_STRING;
 	out_node->value_string = ruleset_name;
 }
 
 void ipsysdify_univ_info(ipsysd_node_t* out_node,
-	const universe_info_t* info)
+	universe_info_t const* info)
 {
 	out_node->type = IPSYSD_NODE_DA;
 	ipsysd_node_da_t* da = &out_node->value_node_da;
@@ -87,7 +87,7 @@ void ipsysdify_univ_info(ipsysd_node_t* out_node,
 }
 
 void ipsysdify_part_type(ipsysd_node_t* out_node,
-	const part_type_t* type)
+	part_type_t const* type)
 {
 	out_node->type = IPSYSD_NODE_DA;
 	ipsysd_node_da_t* da = &out_node->value_node_da;
@@ -118,7 +118,7 @@ void ipsysdify_part_type(ipsysd_node_t* out_node,
 }
 
 void ipsysdify_part_type_table(ipsysd_node_t* out_node,
-	unsigned int type_number, const part_type_t* type_table)
+	unsigned int type_number, part_type_t const* type_table)
 {
 	out_node->type = IPSYSD_NODE_DA;
 	ipsysd_node_da_t* da = &out_node->value_node_da;
@@ -137,7 +137,7 @@ void ipsysdify_part_type_table(ipsysd_node_t* out_node,
 }
 
 void ipsysdify_pil_set(ipsysd_node_t* out_node,
-	const pil_set_t* pil_set)
+	pil_set_t const* pil_set)
 {
 	out_node->type = IPSYSD_NODE_DA;
 	ipsysd_node_da_t* da = &out_node->value_node_da;
@@ -165,7 +165,7 @@ void ipsysdify_pil_set(ipsysd_node_t* out_node,
 }
 
 void ipsysdify_pil_set_table(ipsysd_node_t* out_node,
-	unsigned int type_number, const pil_set_t* pil_set_table)
+	unsigned int type_number, pil_set_t const* pil_set_table)
 {
 	out_node->type = IPSYSD_NODE_DA;
 	ipsysd_node_da_t* da = &out_node->value_node_da;
@@ -186,7 +186,7 @@ void ipsysdify_pil_set_table(ipsysd_node_t* out_node,
 }
 
 void ipsysdify_universe_rules(ipsysd_node_t* out_node,
-	const universe_info_t* info, const pil_set_t* pil_set_table, const part_type_t* type_table)
+	universe_info_t const* info, pil_set_t const* pil_set_table, part_type_t const* type_table)
 {
 	out_node->type = IPSYSD_NODE_DA;
 
@@ -215,10 +215,11 @@ void ipsysdify_universe_rules(ipsysd_node_t* out_node,
 	ipsysdify_pil_set_table(&da->arr[da->len-1].value, info->type_number, pil_set_table);
 }
 
-static void emit_ipsysd_node(FILE *dst, int indent, const ipsysd_key_t* key, const ipsysd_node_t* node);
+static void emit_ipsysd_node(FILE *dst, int indent,
+	ipsysd_key_t const* key, ipsysd_node_t const* node);
 
-void serialize_universe_rules(const char* dst_filepath,
-	const universe_info_t* info, const pil_set_t* pil_set_table, const part_type_t* type_table)
+void serialize_universe_rules(char const* dst_filepath,
+	universe_info_t const* info, pil_set_t const* pil_set_table, part_type_t const* type_table)
 {
 	ipsysd_node_t node;
 	ipsysdify_universe_rules(&node, info, pil_set_table, type_table);
@@ -232,7 +233,7 @@ void serialize_universe_rules(const char* dst_filepath,
 #define PARSE_IPSYSD_ALLOC(src_, out_, while_cond_) \
 	do \
 	{ \
-		long beginning = ftell(src_); \
+		long const beginning = ftell(src_); \
 		int length = 0; \
 		int c; \
 		while (c = fgetc(src_), (while_cond_)) \
@@ -299,8 +300,8 @@ static void parse_ipsysd_kv(FILE* src, ipsysd_kv_t* out_kv)
 static void parse_ipsysd_node(FILE* src, ipsysd_node_t* out_node)
 {
 	fscanf(src, " ");
-	long c_pos = ftell(src);
-	int c = fgetc(src);
+	long const c_pos = ftell(src);
+	int const c = fgetc(src);
 	if (c == '.')
 	{
 		char* type;
@@ -344,7 +345,7 @@ static void parse_ipsysd_node(FILE* src, ipsysd_node_t* out_node)
 		else if (strcmp(type, "pil") == 0)
 		{
 			out_node->type = IPSYSD_PIL;
-			long beginning = ftell(src);
+			long const beginning = ftell(src);
 			float dummy;
 			unsigned int step_count = 0;
 			while (fscanf(src, " %f %f", &dummy, &dummy) != 0)
@@ -376,8 +377,8 @@ static void parse_ipsysd_node(FILE* src, ipsysd_node_t* out_node)
 		while (1)
 		{
 			fscanf(src, " ");
-			long pos = ftell(src);
-			int c = fgetc(src);
+			long const pos = ftell(src);
+			int const c = fgetc(src);
 			fseek(src, pos, SEEK_SET);
 			if (!(islower(c) || c == '_'))
 			{
@@ -394,7 +395,7 @@ static void parse_ipsysd_node(FILE* src, ipsysd_node_t* out_node)
 	}
 }
 
-static void parse_ipsysd_file(const char* src_filepath, ipsysd_node_t* out_node)
+static void parse_ipsysd_file(char const* src_filepath, ipsysd_node_t* out_node)
 {
 	FILE* src = fopen(src_filepath, "r");
 	if (src == NULL)
@@ -448,7 +449,7 @@ static void emit_float(FILE* dst, float value)
 	fprintf(dst, ".float "FLOAT_FMT" ", value);
 }
 
-static void emit_string(FILE* dst, const char* value)
+static void emit_string(FILE* dst, char const* value)
 {
 	fprintf(dst, ".string \"%s\" ", value);
 }
@@ -463,7 +464,7 @@ static void emit_rgbvec(FILE* dst, float r, float g, float b)
 	fprintf(dst, ".rgbvec "FLOAT_FMT" "FLOAT_FMT" "FLOAT_FMT" ", r, g, b);
 }
 
-static void emit_pil(FILE* dst, const pil_t* pil)
+static void emit_pil(FILE* dst, pil_t const* pil)
 {
 	fprintf(dst, ".pil ");
 	for (unsigned int i = 0; i < PIL_STEP_NUMBER; i++)
@@ -472,7 +473,8 @@ static void emit_pil(FILE* dst, const pil_t* pil)
 	}
 }
 
-static void emit_ipsysd_node(FILE *dst, int indent, const ipsysd_key_t* key, const ipsysd_node_t* node)
+static void emit_ipsysd_node(FILE* dst, int indent,
+	ipsysd_key_t const* key, ipsysd_node_t const* node)
 {
 	if (key != NULL)
 	{
@@ -535,7 +537,7 @@ static void emit_ipsysd_node(FILE *dst, int indent, const ipsysd_key_t* key, con
 	}
 }
 
-void deserialize_ipsysd_file(const char* src_filepath,
+void deserialize_ipsysd_file(char const* src_filepath,
 	universe_info_t* out_info, pil_set_t** out_pil_set_table, part_type_t** out_type_table)
 {
 	ipsysd_node_t node;

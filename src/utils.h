@@ -29,15 +29,15 @@ void* xrealloc(void* ptr, size_t size);
 
 /* Reads the file at the given path and returns its content in a buffer that
  * needs to be freed. */
-char* read_file(const char* filepath);
+char* read_file(char const* filepath);
 
 /* Swap the two given values. */
 #define SWAP(type_, x_, y_) \
-	do{ type_ tmp_ = x_; x_ = y_; y_ = tmp_; }while(0)
+	do { type_ tmp_ = x_; x_ = y_; y_ = tmp_; } while(0)
 
 /* Make sure that inf_ <= sup_ by swapping the two values if needed. */
 #define ORDER(type_, inf_, sup_) \
-	do{ if (inf_ > sup_) { SWAP(type_, inf_, sup_); } }while(0)
+	do { if (inf_ > sup_) { SWAP(type_, inf_, sup_); } } while(0)
 
 /* Used by DA_LENGTHEN. */
 unsigned int umax(unsigned int a, unsigned int b);
@@ -46,10 +46,10 @@ unsigned int umax(unsigned int a, unsigned int b);
 #define TYPE_DA_LENGTHEN(len_expr_, cap_, arr_ptr_, elem_type_, elem_size_) \
 	do \
 	{ \
-		unsigned int len_ = len_expr_; \
+		unsigned int const len_ = len_expr_; \
 		if (len_ >= cap_) \
 		{ \
-			unsigned int new_cap_ = umax(len_, cap_ * 2 + 4); \
+			unsigned int const new_cap_ = umax(len_, cap_ * 2 + 4); \
 			elem_type_* new_array_ = realloc(arr_ptr_, \
 				new_cap_ * elem_size_); \
 			assert(new_array_ != NULL); \

@@ -83,7 +83,7 @@ void randomize_parts(part_t* part_array, unsigned int part_number,
 void randomize_pils(pil_set_t* pil_set_table, unsigned int type_number,
 	rg_t* rg)
 {
-	int continuous = 1;//rg_int(rg, 1, 5);
+	int const continuous = 1;//rg_int(rg, 1, 5);
 	for (unsigned int i = 0; i < type_number; ++i)
 	for (unsigned int j = 0; j < type_number; ++j)
 	{
@@ -105,7 +105,7 @@ void randomize_pils(pil_set_t* pil_set_table, unsigned int type_number,
 				}
 				else
 				{
-					float e = (rg_int(rg, 0, 15) == 0) ?
+					float const e = (rg_int(rg, 0, 15) == 0) ?
 						0.0007f / ((float)(s)) :
 						0.0007f / ((float)(s*s));
 					pil_set->attraction.steps[s].offset =
@@ -135,7 +135,7 @@ void randomize_pils(pil_set_t* pil_set_table, unsigned int type_number,
 				}
 				else
 				{
-					float e = (rg_int(rg, 0, 4) == 0) ?
+					float const e = (rg_int(rg, 0, 4) == 0) ?
 						TAU/4.0f : 
 						TAU/10.0f;
 					pil_set->angle.steps[s].offset =
@@ -167,7 +167,7 @@ void randomize_pils(pil_set_t* pil_set_table, unsigned int type_number,
 				}
 				else
 				{
-					float e = (rg_int(rg, 0, 4) == 0) ?
+					float const e = (rg_int(rg, 0, 4) == 0) ?
 						0.0007f / ((float)(s)) :
 						0.0007f / ((float)(s*s));
 					pil_set->speed.steps[s].offset =

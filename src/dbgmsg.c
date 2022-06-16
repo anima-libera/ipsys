@@ -4,21 +4,21 @@
 #include <SDL2/SDL.h>
 
 /* Returns the name of the source parameter of the debug message callback. */
-static const char* opengl_dbgmsg_source_name(GLenum source);
+static char const* opengl_dbgmsg_source_name(GLenum source);
 
 /* Returns the name of the type parameter of the debug message callback. */
-static const char* opengl_dbgmsg_type_name(GLenum type);
+static char const* opengl_dbgmsg_type_name(GLenum type);
 
 /* Returns the name of the severity parameter of the debug message callback. */
-static const char* opengl_dbgmsg_severity_name(GLenum type);
+static char const* opengl_dbgmsg_severity_name(GLenum type);
 
 /* Debug message callback given to glDebugMessageCallback.
  * Prints an error message to stderr. */
 static void GLAPIENTRY opengl_dbgmsg_callback(
 	GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
-	const GLchar* message, const void* user_param);
+	GLchar const* message, void const* user_param);
 
-static const char* opengl_dbgmsg_source_name(GLenum source)
+static char const* opengl_dbgmsg_source_name(GLenum source)
 {
 	switch (source)
 	{
@@ -39,7 +39,7 @@ static const char* opengl_dbgmsg_source_name(GLenum source)
 	}
 }
 
-static const char* opengl_dbgmsg_type_name(GLenum type)
+static char const* opengl_dbgmsg_type_name(GLenum type)
 {
 	switch (type)
 	{
@@ -66,7 +66,7 @@ static const char* opengl_dbgmsg_type_name(GLenum type)
 	}
 }
 
-static const char* opengl_dbgmsg_severity_name(GLenum type)
+static char const* opengl_dbgmsg_severity_name(GLenum type)
 {
 	switch (type)
 	{
@@ -85,7 +85,7 @@ static const char* opengl_dbgmsg_severity_name(GLenum type)
 
 static void GLAPIENTRY opengl_dbgmsg_callback(
 	GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
-	const GLchar* message, const void* user_param)
+	GLchar const* message, void const* user_param)
 {
 	(void)length; (void)user_param;
 	#ifndef ENABLE_OPENGL_NOTIFICATIONS
@@ -119,7 +119,7 @@ void disable_opengl_dbgmsg(void)
 	glDisable(GL_DEBUG_OUTPUT);
 }
 
-void error_sdl2_fail(const char* operation)
+void error_sdl2_fail(char const* operation)
 {
 	fprintf(stderr, "SDL2 error: %s failed: \x1b[31m\"%s\"\x1b[39m\n",
 		operation, SDL_GetError());

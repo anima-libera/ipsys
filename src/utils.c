@@ -6,7 +6,7 @@
 #if 0
 void* xmalloc(size_t size)
 {
-	void* ptr = malloc(size);
+	void const* ptr = malloc(size);
 	if (ptr == NULL)
 	{
 		fprintf(stderr, "Allocation error: "
@@ -17,7 +17,7 @@ void* xmalloc(size_t size)
 
 void* xcalloc(size_t number, size_t size)
 {
-	void* ptr = calloc(number, size);
+	void const* ptr = calloc(number, size);
 	if (ptr == NULL)
 	{
 		fprintf(stderr, "Allocation error: "
@@ -28,7 +28,7 @@ void* xcalloc(size_t number, size_t size)
 
 void* xrealloc(void* ptr, size_t size)
 {
-	void* newptr = realloc(ptr, size);
+	void const* newptr = realloc(ptr, size);
 	if (newptr == NULL)
 	{
 		fprintf(stderr, "Allocation error: "
@@ -39,7 +39,7 @@ void* xrealloc(void* ptr, size_t size)
 }
 #endif
 
-char* read_file(const char* filepath)
+char* read_file(char const* filepath)
 {
 	FILE* file = fopen(filepath, "r");
 	if (file == NULL)
@@ -48,12 +48,12 @@ char* read_file(const char* filepath)
 		return NULL;
 	}
 	fseek(file, 0, SEEK_END);
-	int length = ftell(file);
+	long const length = ftell(file);
 	fseek(file, 0, SEEK_SET);
 	char* buffer = malloc((length+1) * sizeof(char));
-	int length_read = fread(buffer, sizeof(char), length, file);
+	size_t const length_read = fread(buffer, sizeof(char), length, file);
 	fclose(file);
-	if (length_read != length)
+	if (length_read != (unsigned int)length)
 	{
 		fprintf(stderr, "File error: failed to properly read \"%s\"\n",
 			filepath);

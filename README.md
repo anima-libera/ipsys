@@ -58,6 +58,7 @@ At runtime, it is possible to interact with the simulation and rendering via the
 
 - More UI components to tinker with the settings.
   - Marks on sliders that only accept a discrete set of values.
+  - Assign keyboard buttons to UI buttons at will.
 - Make the text-based modular data representation format even better.
   - Config, setting set, color theme, rules, rule generators, particle positions, all of that in different blocks.
   - Each rule should be independant from the others, and optional.

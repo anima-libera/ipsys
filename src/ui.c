@@ -21,7 +21,7 @@ void font_init(font_t* font)
 	#define LINE(...) \
 		do \
 		{ \
-			unsigned char data[] = {__VA_ARGS__}; \
+			unsigned char const data[] = {__VA_ARGS__}; \
 			for (unsigned int i = 0; i < sizeof data; i++) \
 			{ \
 				PAINT(i, line_i, data[i]); \
@@ -355,10 +355,10 @@ void font_init(font_t* font)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 
-void gchar_set(gchar_t* gchar, const font_t* font, char c, float x, float y)
+void gchar_set(gchar_t* gchar, font_t const* font, char c, float x, float y)
 {
 	assert(c > ' ');
-	const font_char_t* fc = &font->char_arr[c - ' '];
+	font_char_t const* fc = &font->char_arr[c - ' '];
 	assert(fc->w > 0 || fc->h > 0);
 	gchar->rect_ui.x = x;
 	gchar->rect_ui.y = y;
@@ -456,8 +456,8 @@ void uipt_draw(uipt_t* uipt, void* callback_data)
 
 void uipt_needs_sync(uipt_t* uipt, unsigned int block_index)
 {
-	unsigned int inf = uipt->block_da_arr[block_index].index;
-	unsigned int sup = inf + uipt->block_da_arr[block_index].len - 1;
+	unsigned int const inf = uipt->block_da_arr[block_index].index;
+	unsigned int const sup = inf + uipt->block_da_arr[block_index].len - 1;
 
 	if (uipt->needs_prim_buffer_sync_sup < uipt->needs_prim_buffer_sync_inf)
 	{
@@ -537,7 +537,7 @@ void triangle_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count
 
 void gchar_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count, void* data)
 {
-	font_t* font = data;
+	font_t const* font = data;
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, font->texture_id);
@@ -569,7 +569,8 @@ void gchar_drawcall_callback(GLuint opengl_buffer_id, unsigned int prim_count, v
 	#undef ATTRIB_LOCATION_FONT_XYWH
 }
 
-void init_gstring(gstring_t* gstring, gchar_t* gchar_block, const char* string, const font_t* font, float x, float y)
+void init_gstring(gstring_t* gstring, gchar_t* gchar_block,
+	char const* string, font_t const* font, float x, float y)
 {
 	float x_offset = 0.0f;
 	float h_max = 0.0f;
@@ -589,7 +590,7 @@ void init_gstring(gstring_t* gstring, gchar_t* gchar_block, const char* string, 
 				x_offset += font->implicit_space_length;
 			}
 			gchar_set(&gchar_block[block_i++], font, string[string_i], x + x_offset, y);
-			const font_char_t* font_char = &font->char_arr[string[string_i] - ' '];
+			font_char_t const* font_char = &font->char_arr[string[string_i] - ' '];
 			x_offset += (float)font_char->w;
 			if (h_max < (float)font_char->h)
 			{
@@ -603,7 +604,8 @@ void init_gstring(gstring_t* gstring, gchar_t* gchar_block, const char* string, 
 	gstring->string = string;
 }
 
-gstring_t alloc_gstring(uipt_t* ui_gchar_table, const char* string, const font_t* font, float x, float y)
+gstring_t alloc_gstring(uipt_t* ui_gchar_table,
+	char const* string, font_t const* font, float x, float y)
 {
 	unsigned int gchar_count = 0;
 	for (unsigned int string_i = 0; string[string_i] != '\0'; string_i++)
@@ -614,7 +616,7 @@ gstring_t alloc_gstring(uipt_t* ui_gchar_table, const char* string, const font_t
 		}
 	}
 
-	unsigned int gchar_block_index = uipt_alloc_prim_block(ui_gchar_table, gchar_count);
+	unsigned int const gchar_block_index = uipt_alloc_prim_block(ui_gchar_table, gchar_count);
 	gchar_t* gchar_block = uipt_get_prim_block(ui_gchar_table, gchar_block_index);
 	gstring_t gstring;
 	gstring.gchar_block_index = gchar_block_index;
@@ -622,7 +624,7 @@ gstring_t alloc_gstring(uipt_t* ui_gchar_table, const char* string, const font_t
 	return gstring;
 }
 
-void gstring_predict_dimensions(const char* string, const font_t* font, float* out_w, float* out_h)
+void gstring_predict_dimensions(char const* string, font_t const* font, float* out_w, float* out_h)
 {
 	float x_offset = 0.0f;
 	float h_max = 0.0f;
@@ -640,7 +642,7 @@ void gstring_predict_dimensions(const char* string, const font_t* font, float* o
 			{
 				x_offset += font->implicit_space_length;
 			}
-			const font_char_t* font_char = &font->char_arr[string[string_i] - ' '];
+			font_char_t const* font_char = &font->char_arr[string[string_i] - ' '];
 			x_offset += (float)font_char->w;
 			if (h_max < (float)font_char->h)
 			{
@@ -654,10 +656,11 @@ void gstring_predict_dimensions(const char* string, const font_t* font, float* o
 	*out_h = h_max;
 }
 
-void gstring_get_dimensions(uipt_t* ui_gchar_table, unsigned int gchar_block_index, float* out_w, float* out_h)
+void gstring_get_dimensions(uipt_t* ui_gchar_table, unsigned int gchar_block_index,
+	float* out_w, float* out_h)
 {
 	gchar_t* gchar_block = uipt_get_prim_block(ui_gchar_table, gchar_block_index);
-	unsigned int len = uipt_get_block_len(ui_gchar_table, gchar_block_index);
+	unsigned int const len = uipt_get_block_len(ui_gchar_table, gchar_block_index);
 
 	assert(len >= 1);
 
@@ -692,10 +695,10 @@ void gstring_get_dimensions(uipt_t* ui_gchar_table, unsigned int gchar_block_ind
 
 static void set_lines_as_rect(ui_line_t* line_block, rect_t rect)
 {
-	const float xx = rect.x + 0.5f;
-	const float yy = rect.y + 0.5f;
-	const float w = rect.w;
-	const float h = rect.h;
+	float const xx = rect.x + 0.5f;
+	float const yy = rect.y + 0.5f;
+	float const w = rect.w;
+	float const h = rect.h;
 
 	line_block[0].a.x = xx;
 	line_block[0].a.y = yy;
@@ -730,10 +733,10 @@ static void set_lines_color(ui_line_t* line_block, unsigned int number, float r,
 
 static void set_triangles_as_rect(ui_triangle_t* triangle_block, rect_t rect)
 {
-	const float xx = rect.x + 0.5f;
-	const float yy = rect.y + 0.5f;
-	const float w = rect.w;
-	const float h = rect.h;
+	float const xx = rect.x + 0.5f;
+	float const yy = rect.y + 0.5f;
+	float const w = rect.w;
+	float const h = rect.h;
 
 	triangle_block[0].a.x = xx;
 	triangle_block[0].a.y = yy;
@@ -749,7 +752,8 @@ static void set_triangles_as_rect(ui_triangle_t* triangle_block, rect_t rect)
 	triangle_block[1].c.y = yy;
 }
 
-static void set_triangles_color(ui_triangle_t* triangle_block, unsigned int number, float r, float g, float b)
+static void set_triangles_color(ui_triangle_t* triangle_block, unsigned int number,
+	float r, float g, float b)
 {
 	for (unsigned int i = 0; i < number; i++)
 	{
@@ -775,7 +779,7 @@ void widget_init_button(ui_fabric_t* ui_fabric, widget_t* widget,
 
 	widget->button.clic_callback = clic_callback;
 
-	rect_t rect = {.x = x, .y = y, .w = w, .h = h};
+	rect_t const rect = {.x = x, .y = y, .w = w, .h = h};
 
 	widget->button.line_block_index = uipt_alloc_prim_block(&ui_fabric->ui_line_table, 4);
 	ui_line_t* line_block = uipt_get_prim_block(&ui_fabric->ui_line_table,
@@ -803,7 +807,7 @@ void widget_reposition_button(ui_fabric_t* ui_fabric, widget_t* widget,
 	widget->w = w;
 	widget->h = h;
 
-	rect_t rect = {.x = x, .y = y, .w = w, .h = h};
+	rect_t const rect = {.x = x, .y = y, .w = w, .h = h};
 
 	ui_line_t* line_block = uipt_get_prim_block(&ui_fabric->ui_line_table,
 		widget->button.line_block_index);
@@ -835,9 +839,9 @@ void widget_init_slider(ui_fabric_t* ui_fabric, widget_t* widget, float value,
 
 	widget->slider.clic_callback = clic_callback;
 
-	const float v = widget->slider.value;
-	rect_t rect = {.x = x, .y = y, .w = w, .h = h};
-	rect_t rect_filling = {.x = x, .y = y, .w = floorf(w * v) + 0.5f, .h = h};
+	float const v = widget->slider.value;
+	rect_t const rect = {.x = x, .y = y, .w = w, .h = h};
+	rect_t const rect_filling = {.x = x, .y = y, .w = floorf(w * v) + 0.5f, .h = h};
 
 	widget->slider.line_block_index = uipt_alloc_prim_block(&ui_fabric->ui_line_table, 4);
 	ui_line_t* line_block = uipt_get_prim_block(&ui_fabric->ui_line_table,
@@ -867,9 +871,9 @@ void widget_reposition_slider(ui_fabric_t* ui_fabric, widget_t* widget,
 	widget->w = w;
 	widget->h = h;
 
-	const float v = widget->slider.value;
-	rect_t rect = {.x = x, .y = y, .w = w, .h = h};
-	rect_t rect_filling = {.x = x, .y = y, .w = floorf(w * v) + 0.5f, .h = h};
+	float const v = widget->slider.value;
+	rect_t const rect = {.x = x, .y = y, .w = w, .h = h};
+	rect_t const rect_filling = {.x = x, .y = y, .w = floorf(w * v) + 0.5f, .h = h};
 
 	ui_line_t* line_block = uipt_get_prim_block(&ui_fabric->ui_line_table,
 		widget->slider.line_block_index);
@@ -893,10 +897,10 @@ void widget_reposition_slider(ui_fabric_t* ui_fabric, widget_t* widget,
 void widget_update_slider(ui_fabric_t* ui_fabric, widget_t* widget,
 	float x, float y)
 {
-	const float w = widget->w;
-	const float h = widget->h;
-	const float v = widget->slider.value;
-	rect_t rect_filling = {.x = x, .y = y, .w = floorf(w * v) + 0.5f, .h = h};
+	float const w = widget->w;
+	float const h = widget->h;
+	float const v = widget->slider.value;
+	rect_t const rect_filling = {.x = x, .y = y, .w = floorf(w * v) + 0.5f, .h = h};
 
 	ui_triangle_t* triangle_block = uipt_get_prim_block(&ui_fabric->ui_triangle_table,
 		widget->slider.triangle_block_index);

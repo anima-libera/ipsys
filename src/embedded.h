@@ -16,22 +16,22 @@
  * and to have a type compatible with const char*. */
 #define EMBEDDED(filename_) extern
 
-EMBEDDED("shaders/particles.vert") const char* g_particles_vert;
-EMBEDDED("shaders/particles.geom") const char* g_particles_geom;
-EMBEDDED("shaders/particles.frag") const char* g_particles_frag;
-EMBEDDED("shaders/ui_simple.vert") const char* g_ui_simple_vert;
-EMBEDDED("shaders/ui_simple.frag") const char* g_ui_simple_frag;
-EMBEDDED("shaders/gchars.vert") const char* g_gchars_vert;
-EMBEDDED("shaders/gchars.geom") const char* g_gchars_geom;
-EMBEDDED("shaders/gchars.frag") const char* g_gchars_frag;
-EMBEDDED("shaders/fade.vert") const char* g_fade_vert;
-EMBEDDED("shaders/fade.geom") const char* g_fade_geom;
-EMBEDDED("shaders/fade.frag") const char* g_fade_frag;
-EMBEDDED("shaders/texture_fade.vert") const char* g_texture_fade_vert;
-EMBEDDED("shaders/texture_fade.geom") const char* g_texture_fade_geom;
-EMBEDDED("shaders/texture_fade.frag") const char* g_texture_fade_frag;
-EMBEDDED("shaders/texture_fade_2.vert") const char* g_texture_fade_2_vert;
-EMBEDDED("shaders/texture_fade_2.frag") const char* g_texture_fade_2_frag;
-EMBEDDED("shaders/iteruniv.comp") const char* g_iteruniv_comp;
+EMBEDDED("shaders/particles.vert") char const* g_particles_vert;
+EMBEDDED("shaders/particles.geom") char const* g_particles_geom;
+EMBEDDED("shaders/particles.frag") char const* g_particles_frag;
+EMBEDDED("shaders/ui_simple.vert") char const* g_ui_simple_vert;
+EMBEDDED("shaders/ui_simple.frag") char const* g_ui_simple_frag;
+EMBEDDED("shaders/gchars.vert") char const* g_gchars_vert;
+EMBEDDED("shaders/gchars.geom") char const* g_gchars_geom;
+EMBEDDED("shaders/gchars.frag") char const* g_gchars_frag;
+EMBEDDED("shaders/fade.vert") char const* g_fade_vert;
+EMBEDDED("shaders/fade.geom") char const* g_fade_geom;
+EMBEDDED("shaders/fade.frag") char const* g_fade_frag;
+EMBEDDED("shaders/texture_fade.vert") char const* g_texture_fade_vert;
+EMBEDDED("shaders/texture_fade.geom") char const* g_texture_fade_geom;
+EMBEDDED("shaders/texture_fade.frag") char const* g_texture_fade_frag;
+EMBEDDED("shaders/texture_fade_2.vert") char const* g_texture_fade_2_vert;
+EMBEDDED("shaders/texture_fade_2.frag") char const* g_texture_fade_2_frag;
+EMBEDDED("shaders/iteruniv.comp") char const* g_iteruniv_comp;
 
 #endif /* IPSYS_HEADER_EMBEDDED__ */

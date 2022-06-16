@@ -40,7 +40,7 @@ static uint32_t lcg_iter(uint32_t lcg)
 
 static uint32_t rg_half_step(rg_t* rg)
 {
-	uint32_t raw = lcg_iter(rg->lcg_array[rg->cur]);
+	uint32_t const raw = lcg_iter(rg->lcg_array[rg->cur]);
 	rg->lcg_array[rg->cur] = raw;
 	rg->cur = (rg->cur + (raw >> 16) + 3) % RG_SIZE;
 	return raw >> 15;
@@ -48,8 +48,8 @@ static uint32_t rg_half_step(rg_t* rg)
 
 static uint32_t rg_step(rg_t* rg)
 {
-	uint32_t half_a = rg_half_step(rg);
-	uint32_t half_b = rg_half_step(rg);
+	uint32_t const half_a = rg_half_step(rg);
+	uint32_t const half_b = rg_half_step(rg);
 	return half_a + (half_b << 16);
 }
 
