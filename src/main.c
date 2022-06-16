@@ -51,6 +51,13 @@ void callback_slider_2(widget_t* widget)
 		(float)(MAX_ITER_PER_FRAME - 1);
 }
 
+int g_callback_slider_3_flag = 0;
+void callback_slider_3(widget_t* widget)
+{
+	(void)widget;
+	g_callback_slider_3_flag = 1;
+}
+
 int main(int argc, char const** argv)
 {
 	l_beginning:;
@@ -279,6 +286,7 @@ int main(int argc, char const** argv)
 	#define WORK_GROUP_SIZE 256
 
 	setting_set_fade_factor(0.05f);
+	setting_set_part_radius(0.006f);
 
 	unsigned int iteration_number_per_frame = 4;
 
@@ -361,7 +369,7 @@ int main(int argc, char const** argv)
 
 	widget_manager_t wm = {.next_x = 20.0f, .next_y = 800.0f - 40.0f};
 
-	widget_t widget_slider_test_arr[2];
+	widget_t widget_slider_test_arr[3];
 	widget_init_slider(&ui_fabric, &widget_slider_test_arr[0],
 		1.0f - g_setting_read_fade_factor / SETTING_FADE_FACTOR_MAX,
 		0.0f, 0.0f, 760.0f, 20.0f, "TRACE", callback_slider_1);
@@ -370,6 +378,10 @@ int main(int argc, char const** argv)
 		((float)iteration_number_per_frame - 1.0f) / ((float)(MAX_ITER_PER_FRAME) - 1.0f),
 		0.0f, 0.0f, 760.0f, 20.0f, "ITERATION NUMBER PER FRAME", callback_slider_2);
 	widget_manager_give(&wm, &ui_fabric, &widget_slider_test_arr[1]);
+	widget_init_slider(&ui_fabric, &widget_slider_test_arr[2],
+		g_setting_read_part_radius / SETTING_PART_RADIUS_MAX,
+		0.0f, 0.0f, 760.0f, 20.0f, "PARTICLE RADIUS", callback_slider_3);
+	widget_manager_give(&wm, &ui_fabric, &widget_slider_test_arr[2]);
 	
 	widget_t widget_button_test_arr[1];
 	for (unsigned int i = 0; i < 1; i++)
@@ -557,6 +569,13 @@ int main(int argc, char const** argv)
 				roundf(widget_slider_test_arr[1].slider.value *
 					((float)MAX_ITER_PER_FRAME - 1.0f) + 1.0f);
 			iteration_number_per_frame = value;
+		}
+		if (g_callback_slider_3_flag)
+		{
+			g_callback_slider_3_flag = 0;
+			float const value = widget_slider_test_arr[2].slider.value *
+				SETTING_PART_RADIUS_MAX;
+			setting_set_part_radius(value);
 		}
 		if (g_callback_button_test_flag)
 		{

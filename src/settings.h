@@ -11,7 +11,12 @@
 extern float g_setting_read_fade_factor;
 #define SETTING_FADE_FACTOR_MIN 0.0f
 #define SETTING_FADE_FACTOR_MAX 0.2f
-
 void setting_set_fade_factor(GLfloat new_fade_factor);
+
+/* Read-only particle radius setting current value. */
+extern float g_setting_read_part_radius;
+#define SETTING_PART_RADIUS_MIN 0.0f
+#define SETTING_PART_RADIUS_MAX 0.05f
+void setting_set_part_radius(GLfloat new_part_radius);
 
 #endif /* IPSYS_HEADER_SETTINGS__ */
