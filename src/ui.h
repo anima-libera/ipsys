@@ -140,6 +140,20 @@ typedef enum widget_type_t widget_type_t;
 
 typedef struct widget_t widget_t;
 
+struct widget_button_t
+{
+	unsigned int line_block_index;
+	unsigned int triangle_block_index;
+	gstring_t gstring;
+	void (*clic_callback)(widget_t* widget);
+};
+typedef struct widget_button_t widget_button_t;
+
+void widget_init_button(ui_fabric_t* ui_fabric, widget_t* widget,
+	float x, float y, float w, float h, char* text, void (*clic_callback)(widget_t* widget));
+void widget_reposition_button(ui_fabric_t* ui_fabric, widget_t* widget,
+	float x, float y, float w, float h);
+
 struct widget_slider_t
 {
 	unsigned int line_block_index;
@@ -150,14 +164,12 @@ struct widget_slider_t
 };
 typedef struct widget_slider_t widget_slider_t;
 
-struct widget_button_t
-{
-	unsigned int line_block_index;
-	unsigned int triangle_block_index;
-	gstring_t gstring;
-	void (*clic_callback)(widget_t* widget);
-};
-typedef struct widget_button_t widget_button_t;
+void widget_init_slider(ui_fabric_t* ui_fabric, widget_t* widget, float value,
+	float x, float y, float w, float h, char* text, void (*clic_callback)(widget_t* widget));
+void widget_reposition_slider(ui_fabric_t* ui_fabric, widget_t* widget,
+	float x, float y, float w, float h);
+void widget_update_slider(ui_fabric_t* ui_fabric, widget_t* widget,
+	float x, float y);
 
 struct widget_t
 {
@@ -170,16 +182,6 @@ struct widget_t
 	};
 };
 
-void widget_init_button(ui_fabric_t* ui_fabric, widget_t* widget,
-	float x, float y, float w, float h, char* text, void (*clic_callback)(widget_t* widget));
-void widget_reposition_button(ui_fabric_t* ui_fabric, widget_t* widget,
-	float x, float y, float w, float h);
-void widget_init_slider(ui_fabric_t* ui_fabric, widget_t* widget, float value,
-	float x, float y, float w, float h, char* text, void (*clic_callback)(widget_t* widget));
-void widget_reposition_slider(ui_fabric_t* ui_fabric, widget_t* widget,
-	float x, float y, float w, float h);
-void widget_update_slider(ui_fabric_t* ui_fabric, widget_t* widget,
-	float x, float y);
 int widget_has_coords(widget_t* widget, float widget_x, float widget_y,
 	float coords_x, float coords_y);
 void widget_reposition(ui_fabric_t* ui_fabric, widget_t* widget,
